@@ -5,8 +5,8 @@ import { useState, useEffect, useCallback } from "react";
 // Substitua pelos seus dados do projeto Supabase
 // 1. Acesse https://supabase.com → New Project
 // 2. Em Settings > API, copie Project URL e anon key
-const SUPABASE_URL = "https://SEU_PROJETO.supabase.co";
-const SUPABASE_ANON_KEY = "SUA_ANON_KEY_AQUI";
+const SUPABASE_URL = "https://osgbjgbtzsmcmzighgaj.supabase.co";
+const SUPABASE_ANON_KEY = "SUA_ANON_KEY_AQUIeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zZ2JqZ2J0enNtY216aWdoZ2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjg1MzMsImV4cCI6MjA5Mzg0NDUzM30.hwuO4YWzvxX-8gVSkZFiGADR4XKw6zGNZoWKxhS2RHQ"
 
 // SQL para criar as tabelas — rode no Supabase SQL Editor:
 /*
