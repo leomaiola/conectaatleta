@@ -6,7 +6,8 @@ import { useState, useEffect, useCallback } from "react";
 // 1. Acesse https://supabase.com → New Project
 // 2. Em Settings > API, copie Project URL e anon key
 const SUPABASE_URL = "https://osgbjgbtzsmcmzighgaj.supabase.co";
-const SUPABASE_ANON_KEY = "SUA_ANON_KEY_AQUIeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zZ2JqZ2J0enNtY216aWdoZ2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjg1MzMsImV4cCI6MjA5Mzg0NDUzM30.hwuO4YWzvxX-8gVSkZFiGADR4XKw6zGNZoWKxhS2RHQ"
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zZ2JqZ2J0enNtY216aWdoZ2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjg1MzMsImV4cCI6MjA5Mzg0NDUzM30.hwuO4YWzvxX-8gVSkZFiGADR4XKw6zGNZoWKxhS2RHQ"
+
 
 // SQL para criar as tabelas — rode no Supabase SQL Editor:
 /*
@@ -777,20 +778,26 @@ function AuthScreen({ onLogin }) {
 
   const handleSubmit = async () => {
     if (isDemo) { onLogin(MOCK.user, MOCK.profile); return; }
+    if (!email || !pass) { setErr("Preencha e-mail e senha."); return; }
     setLoading(true); setErr("");
     try {
       if (tab === "login") {
         const d = await supabase.signIn(email, pass);
         if (d.error) throw new Error(d.error.message);
+        if (!d.user) throw new Error("Usuário não encontrado. Verifique e-mail e senha.");
         const profiles = await supabase.query("profiles", `?id=eq.${d.user.id}&select=*`);
-        onLogin(d.user, profiles[0] || null);
+        const profile = profiles && profiles[0] ? profiles[0] : { id: d.user.id, role: "atleta", name: email.split("@")[0], sport: "" };
+        onLogin(d.user, profile);
       } else {
+        if (!name) { setErr("Preencha seu nome."); setLoading(false); return; }
         const d = await supabase.signUp(email, pass);
         if (d.error) throw new Error(d.error.message);
-        await supabase.insert("profiles", { id: d.user.id, role, name, sport });
-        onLogin(d.user, { id: d.user.id, role, name, sport });
+        if (!d.user) throw new Error("Erro ao criar conta. Tente novamente.");
+        const newProfile = { id: d.user.id, role, name, sport: sport || "" };
+        await supabase.insert("profiles", newProfile);
+        onLogin(d.user, newProfile);
       }
-    } catch (e) { setErr(e.message); }
+    } catch (e) { setErr(e.message || "Erro inesperado. Tente novamente."); }
     setLoading(false);
   };
 
