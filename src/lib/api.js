@@ -344,4 +344,103 @@ export const api = {
       time: timeAgo(p.created_at),
     })), error }
   },
+
+  // Companies
+  async getCompanies() {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'empresa')
+      .order('followers', { ascending: false })
+    return { data: data || [], error }
+  },
+
+  // Comments
+  async getComments(postId) {
+    const { data, error } = await supabase
+      .from('post_comments')
+      .select('*, author:author_id(name, avatar)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true })
+    return { data: data || [], error }
+  },
+  async createComment(postId, authorId, content) {
+    const { data, error } = await supabase
+      .from('post_comments')
+      .insert({ post_id: postId, author_id: authorId, content })
+      .select('*, author:author_id(name, avatar)')
+      .single()
+    return { data, error }
+  },
+
+  // Athlete results
+  async getAthleteResults(athleteId) {
+    const { data, error } = await supabase
+      .from('athlete_results')
+      .select('*')
+      .eq('athlete_id', athleteId)
+      .order('event_date', { ascending: false })
+    return { data: data || [], error }
+  },
+  async addAthleteResult(result) {
+    const { data, error } = await supabase
+      .from('athlete_results')
+      .insert(result)
+      .select()
+      .single()
+    return { data, error }
+  },
+  async deleteAthleteResult(id) {
+    const { error } = await supabase.from('athlete_results').delete().eq('id', id)
+    return { error }
+  },
+
+  // Messages
+  async getConversations(userId) {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*, sender:sender_id(id, name, avatar, role), receiver:receiver_id(id, name, avatar, role)')
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+      .order('created_at', { ascending: false })
+    // Dedupe by conversation partner
+    const seen = new Set()
+    const convs = []
+    for (const m of (data || [])) {
+      const otherId = m.sender_id === userId ? m.receiver_id : m.sender_id
+      const other = m.sender_id === userId ? m.receiver : m.sender
+      if (!seen.has(otherId)) {
+        seen.add(otherId)
+        convs.push({ ...m, other, otherId, unread: !m.read && m.receiver_id === userId })
+      }
+    }
+    return { data: convs, error }
+  },
+  async getMessages(userId, otherId) {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .or(`and(sender_id.eq.${userId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${userId})`)
+      .order('created_at', { ascending: true })
+    if (data) {
+      await supabase.from('messages').update({ read: true })
+        .eq('receiver_id', userId).eq('sender_id', otherId).eq('read', false)
+    }
+    return { data: data || [], error }
+  },
+  async sendMessage(senderId, receiverId, content) {
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({ sender_id: senderId, receiver_id: receiverId, content })
+      .select()
+      .single()
+    return { data, error }
+  },
+  async getUnreadMessageCount(userId) {
+    const { count } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('receiver_id', userId)
+      .eq('read', false)
+    return count || 0
+  },
 }

@@ -274,3 +274,60 @@ create policy "notif_insert" on notifications for insert with check (auth.uid() 
 
 drop policy if exists "notif_update" on notifications;
 create policy "notif_update" on notifications for update using (auth.uid() = user_id);
+
+-- ─── NEW FEATURES ─────────────────────────────────────────────────────────────
+
+-- Add columns to profiles
+alter table profiles add column if not exists results_bio text;
+
+-- Post comments
+create table if not exists post_comments (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid references feed_posts(id) on delete cascade not null,
+  author_id uuid references profiles(id) on delete cascade not null,
+  content text not null,
+  created_at timestamptz default now()
+);
+alter table post_comments enable row level security;
+drop policy if exists "comments_select" on post_comments;
+create policy "comments_select" on post_comments for select using (true);
+drop policy if exists "comments_insert" on post_comments;
+create policy "comments_insert" on post_comments for insert with check (auth.uid() = author_id);
+drop policy if exists "comments_delete" on post_comments;
+create policy "comments_delete" on post_comments for delete using (auth.uid() = author_id);
+
+-- Athlete results (12-month history)
+create table if not exists athlete_results (
+  id uuid primary key default gen_random_uuid(),
+  athlete_id uuid references profiles(id) on delete cascade not null,
+  event_name text not null,
+  position text,
+  medal text check (medal in ('gold','silver','bronze','none')),
+  event_date date not null,
+  description text,
+  created_at timestamptz default now()
+);
+alter table athlete_results enable row level security;
+drop policy if exists "results_select" on athlete_results;
+create policy "results_select" on athlete_results for select using (true);
+drop policy if exists "results_insert" on athlete_results;
+create policy "results_insert" on athlete_results for insert with check (auth.uid() = athlete_id);
+drop policy if exists "results_delete" on athlete_results;
+create policy "results_delete" on athlete_results for delete using (auth.uid() = athlete_id);
+
+-- Direct messages
+create table if not exists messages (
+  id uuid primary key default gen_random_uuid(),
+  sender_id uuid references profiles(id) on delete cascade not null,
+  receiver_id uuid references profiles(id) on delete cascade not null,
+  content text not null,
+  read boolean default false,
+  created_at timestamptz default now()
+);
+alter table messages enable row level security;
+drop policy if exists "messages_select" on messages;
+create policy "messages_select" on messages for select using (auth.uid() = sender_id or auth.uid() = receiver_id);
+drop policy if exists "messages_insert" on messages;
+create policy "messages_insert" on messages for insert with check (auth.uid() = sender_id);
+drop policy if exists "messages_update" on messages;
+create policy "messages_update" on messages for update using (auth.uid() = receiver_id);

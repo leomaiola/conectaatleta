@@ -40,6 +40,7 @@ const NAV_BY_ROLE = {
   atleta: [
     { key: "dashboard",    icon: "⊞", label: "Dashboard" },
     { key: "feed",         icon: "📋", label: "Feed" },
+    { key: "messages",     icon: "💬", label: "Mensagens", badge: null },
     { key: "athletes",     icon: "🏃", label: "Atletas" },
     { key: "sponsorships", icon: "🤝", label: "Patrocínios", badge: null },
     { key: "marketplace",  icon: "🩺", label: "Profissionais" },
@@ -48,12 +49,14 @@ const NAV_BY_ROLE = {
   ],
   empresa: [
     { key: "dashboard",    icon: "⊞", label: "Dashboard" },
+    { key: "messages",     icon: "💬", label: "Mensagens", badge: null },
     { key: "athletes",     icon: "🏃", label: "Buscar Atletas" },
     { key: "sponsorships", icon: "🤝", label: "Meus Patrocínios", badge: null },
     { key: "profile",      icon: "👤", label: "Perfil da Empresa" },
   ],
   clube: [
     { key: "dashboard",    icon: "⊞", label: "Dashboard" },
+    { key: "messages",     icon: "💬", label: "Mensagens", badge: null },
     { key: "feed",         icon: "📋", label: "Feed" },
     { key: "athletes",     icon: "🏃", label: "Atletas" },
     { key: "crowdfunding", icon: "💰", label: "Campanhas" },
@@ -62,6 +65,7 @@ const NAV_BY_ROLE = {
   profissional: [
     { key: "dashboard",   icon: "⊞", label: "Dashboard" },
     { key: "feed",        icon: "📋", label: "Feed" },
+    { key: "messages",    icon: "💬", label: "Mensagens", badge: null },
     { key: "marketplace", icon: "🩺", label: "Meus Serviços" },
     { key: "athletes",    icon: "🏃", label: "Atletas" },
     { key: "profile",     icon: "👤", label: "Meu Perfil" },
@@ -69,12 +73,14 @@ const NAV_BY_ROLE = {
   midia: [
     { key: "dashboard", icon: "⊞", label: "Dashboard" },
     { key: "feed",      icon: "📋", label: "Feed" },
+    { key: "messages",  icon: "💬", label: "Mensagens", badge: null },
     { key: "athletes",  icon: "🏃", label: "Atletas" },
     { key: "profile",   icon: "👤", label: "Meu Perfil" },
   ],
   apoiador: [
     { key: "dashboard",    icon: "⊞", label: "Dashboard" },
     { key: "feed",         icon: "📋", label: "Feed" },
+    { key: "messages",     icon: "💬", label: "Mensagens", badge: null },
     { key: "athletes",     icon: "🏃", label: "Atletas" },
     { key: "crowdfunding", icon: "💰", label: "Apoiar Atletas" },
     { key: "profile",      icon: "👤", label: "Meu Perfil" },
@@ -359,12 +365,102 @@ const styles = `
   .athlete-profile-close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.15s; }
   .athlete-profile-close:hover { background: rgba(255,255,255,0.2); }
   .athlete-profile-body { padding: 24px 28px; }
+
+  /* ── MESSAGES ── */
+  .messages-layout { display: grid; grid-template-columns: 280px 1fr; height: 100%; gap: 0; background: var(--d1); border-radius: 16px; overflow: hidden; border: 1.5px solid var(--bd); }
+  .conv-list { border-right: 1px solid var(--bd); overflow-y: auto; }
+  .conv-list-header { padding: 18px 20px; border-bottom: 1px solid var(--bd); font-weight: 700; font-size: 14px; color: var(--tx); font-family: 'Space Grotesk', sans-serif; }
+  .conv-item { padding: 14px 20px; display: flex; gap: 10px; align-items: center; cursor: pointer; transition: background 0.1s; border-bottom: 1px solid var(--bd); }
+  .conv-item:hover { background: var(--bk); }
+  .conv-item.active { background: linear-gradient(135deg, rgba(16,185,129,0.07), rgba(59,130,246,0.05)); border-left: 3px solid var(--g); }
+  .conv-avatar { width: 40px; height: 40px; border-radius: 12px; background: var(--grad); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .conv-name { font-size: 13px; font-weight: 600; color: var(--tx); }
+  .conv-preview { font-size: 12px; color: var(--mu2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+  .conv-unread { width: 8px; height: 8px; background: var(--g); border-radius: 50%; margin-left: auto; flex-shrink: 0; }
+  .chat-area { display: flex; flex-direction: column; height: 100%; }
+  .chat-header { padding: 18px 22px; border-bottom: 1px solid var(--bd); display: flex; align-items: center; gap: 12px; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .chat-msg { display: flex; flex-direction: column; max-width: 70%; }
+  .chat-msg.mine { align-self: flex-end; align-items: flex-end; }
+  .chat-msg.theirs { align-self: flex-start; }
+  .chat-bubble { padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; }
+  .chat-msg.mine .chat-bubble { background: var(--grad); color: #fff; border-bottom-right-radius: 4px; }
+  .chat-msg.theirs .chat-bubble { background: var(--bk); border: 1px solid var(--bd); color: var(--tx); border-bottom-left-radius: 4px; }
+  .chat-time { font-size: 10px; color: var(--mu); margin-top: 3px; font-weight: 600; }
+  .chat-input-area { padding: 16px 20px; border-top: 1px solid var(--bd); display: flex; gap: 10px; align-items: flex-end; }
+  .chat-input { flex: 1; background: var(--bk); border: 1.5px solid var(--bd); border-radius: 12px; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--tx); outline: none; resize: none; min-height: 42px; max-height: 120px; transition: border-color 0.15s; }
+  .chat-input:focus { border-color: var(--g); }
+  .chat-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; color: var(--mu); }
+
+  /* ── COMMENTS ── */
+  .comments-section { padding-top: 10px; border-top: 1px solid var(--bd); margin-top: 8px; }
+  .comment-item { display: flex; gap: 8px; margin-bottom: 10px; }
+  .comment-avatar { width: 28px; height: 28px; border-radius: 8px; background: var(--grad); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .comment-bubble { flex: 1; background: var(--bk); border-radius: 10px; padding: 8px 12px; }
+  .comment-author { font-size: 11px; font-weight: 700; color: var(--tx); margin-bottom: 2px; }
+  .comment-text { font-size: 12px; color: var(--mu2); line-height: 1.5; }
+  .comment-input-row { display: flex; gap: 8px; margin-top: 8px; }
+
+  /* ── RESULTS CHART ── */
+  .results-chart { background: var(--bk); border-radius: 12px; padding: 16px; margin-top: 12px; }
+  .chart-bar-row { display: flex; align-items: flex-end; gap: 4px; height: 80px; margin-bottom: 6px; }
+  .chart-bar-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 3px; height: 100%; justify-content: flex-end; }
+  .chart-bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 3px; transition: height 0.4s; }
+  .chart-label { font-size: 8px; color: var(--mu); font-weight: 600; text-align: center; }
+  .medal-dot { font-size: 10px; text-align: center; }
+
+  /* ── EMPRESA DO ESPORTE ── */
+  .empresa-widget { background: linear-gradient(135deg, var(--sb), #1E293B); border-radius: 16px; padding: 20px; margin-bottom: 14px; position: relative; overflow: hidden; }
+  .empresa-widget::before { content: ''; position: absolute; top: -30px; right: -30px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(ellipse, rgba(16,185,129,0.2) 0%, transparent 70%); }
+  .empresa-crown { font-size: 11px; font-weight: 700; color: var(--g4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .empresa-name { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 4px; font-family: 'Space Grotesk', sans-serif; }
+  .empresa-stats { display: flex; gap: 16px; margin-top: 10px; }
+  .empresa-stat { text-align: center; }
+  .empresa-stat-val { font-size: 16px; font-weight: 800; color: #fff; font-family: 'Space Grotesk', sans-serif; }
+  .empresa-stat-label { font-size: 9px; color: #64748B; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
 `;
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 function initials(name) {
   return (name || 'U').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+}
+
+function calcEngagement(profile, sponsorships) {
+  const activeSpons = sponsorships.filter(s =>
+    (s.athlete_id === profile.id || s.sponsor_id === profile.id) && s.status === 'active'
+  ).length;
+  const followers = profile.followers || 0;
+  const score = followers + activeSpons * 30;
+  if (score >= 150) return { label: 'Alta', badge: 'badge-green' };
+  if (score >= 30) return { label: 'Média', badge: 'badge-orange' };
+  return { label: 'Baixa', badge: 'badge-blue' };
+}
+
+function getEmpresaDoEsporte(companies, sponsorships) {
+  if (!companies || companies.length === 0) return null;
+  return companies.map(c => ({
+    ...c,
+    score: (c.followers || 0) + sponsorships.filter(s => s.sponsor_id === c.id && s.status === 'active').length * 50,
+    activeSpons: sponsorships.filter(s => s.sponsor_id === c.id && s.status === 'active').length,
+  })).sort((a, b) => b.score - a.score)[0];
+}
+
+function getLast12MonthsData(results) {
+  const now = new Date();
+  return Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+    const yr = d.getFullYear(), mo = d.getMonth();
+    const monthResults = results.filter(r => {
+      const rd = new Date(r.event_date);
+      return rd.getFullYear() === yr && rd.getMonth() === mo;
+    });
+    return {
+      label: d.toLocaleDateString('pt-BR', { month: 'short' }),
+      events: monthResults.length,
+      medals: monthResults.filter(r => r.medal && r.medal !== 'none').length,
+    };
+  });
 }
 
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
@@ -405,6 +501,8 @@ function AuthScreen({ onLogin }) {
   const [sport, setSport] = useState('');
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   const handleSubmit = async () => {
     if (!email || !pass) { setErr('Preencha e-mail e senha.'); return; }
@@ -417,6 +515,7 @@ function AuthScreen({ onLogin }) {
         onLogin(data.user, profile || { id: data.user.id, role: 'atleta', name: email.split('@')[0] });
       } else {
         if (!name) { setErr('Preencha seu nome.'); setLoading(false); return; }
+        if (tab === 'signup' && !termsAccepted) { setErr('Você precisa aceitar os Termos de Uso para se cadastrar.'); setLoading(false); return; }
         const { data, error } = await api.signUp(email, pass);
         if (error) throw new Error(error.message);
         if (!data.user) throw new Error('Verifique seu e-mail para confirmar o cadastro.');
@@ -492,6 +591,43 @@ function AuthScreen({ onLogin }) {
             onChange={e => setPass(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
         </div>
 
+        {tab === 'signup' && (
+          <>
+            <div style={{ background: 'var(--bk)', borderRadius: 12, padding: 14, marginBottom: 14, fontSize: 12, color: 'var(--mu2)', lineHeight: 1.7, border: '1px solid var(--bd)' }}>
+              <div style={{ fontWeight: 700, color: 'var(--tx)', marginBottom: 8 }}>⚠️ Restrição de Idade</div>
+              Esta plataforma é destinada a maiores de 18 anos. Menores de idade somente podem participar com o consentimento expresso de seus responsáveis legais, conforme ECA (Lei nº 8.069/1990).
+            </div>
+            <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer', marginBottom: 16 }}>
+              <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} style={{ marginTop: 3, flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: 'var(--mu2)', lineHeight: 1.6 }}>
+                Li e aceito os <button type="button" style={{ color: 'var(--g)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textDecoration: 'underline', padding: 0, fontSize: 12 }} onClick={() => setShowTerms(true)}>Termos de Uso e Política de Privacidade</button>, incluindo o tratamento de dados pessoais conforme a <strong>LGPD (Lei nº 13.709/2018)</strong> e o Marco Civil da Internet (Lei nº 12.965/2014).
+              </span>
+            </label>
+            {showTerms && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.7)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+                <div style={{ background: '#fff', borderRadius: 20, padding: 32, maxWidth: 560, maxHeight: '80vh', overflowY: 'auto', position: 'relative' }}>
+                  <button onClick={() => setShowTerms(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'var(--bk)', border: '1px solid var(--bd)', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', fontSize: 16 }}>×</button>
+                  <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 20, fontFamily: "'Space Grotesk',sans-serif" }}>Termos de Uso e Privacidade</div>
+                  {[
+                    ['1. Proteção de Dados — LGPD (Lei nº 13.709/2018)', 'Seus dados pessoais são coletados exclusivamente para o funcionamento da plataforma ConectaAtleta, com base no seu consentimento explícito. Você tem o direito de acessar, corrigir, eliminar, portabilizar e revogar o consentimento sobre seus dados a qualquer momento, mediante solicitação em nossos canais de atendimento.'],
+                    ['2. Marco Civil da Internet (Lei nº 12.965/2014)', 'Garantimos a privacidade e inviolabilidade das suas comunicações privadas. Seus dados de navegação não serão compartilhados com terceiros sem consentimento, exceto mediante ordem judicial.'],
+                    ['3. Código de Defesa do Consumidor (Lei nº 8.078/1990)', 'Todos os serviços e transações realizados na plataforma estão sujeitos ao CDC, garantindo transparência, qualidade e segurança nas relações de consumo.'],
+                    ['4. Restrição de Idade — ECA (Lei nº 8.069/1990)', 'Esta plataforma é destinada exclusivamente a pessoas com 18 anos ou mais. Menores de 18 anos somente podem utilizar a plataforma mediante consentimento expresso de seus responsáveis legais, que assumem integral responsabilidade pelo uso.'],
+                    ['5. Finalidade dos Dados', 'As informações coletadas (nome, e-mail, localização, modalidade esportiva, resultados) são utilizadas exclusivamente para conectar atletas, empresas, clubes e profissionais do esporte. Não vendemos dados a terceiros.'],
+                    ['6. Segurança', 'Adotamos medidas técnicas e organizacionais adequadas para proteger seus dados contra acesso não autorizado, conforme as melhores práticas de segurança da informação.'],
+                    ['7. Contato e DPO', 'Para exercer seus direitos ou esclarecer dúvidas sobre o tratamento de dados, entre em contato pelo e-mail privacidade@conectaatleta.com.br.'],
+                  ].map(([title, text]) => (
+                    <div key={title} style={{ marginBottom: 16 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color: 'var(--tx)' }}>{title}</div>
+                      <div style={{ fontSize: 12, color: 'var(--mu2)', lineHeight: 1.7 }}>{text}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
         {err && <div style={{ color: 'var(--rd)', fontSize: 12, marginBottom: 12 }}>{err}</div>}
 
         <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '14px' }}
@@ -520,8 +656,13 @@ function DashboardAtleta({ profile, sponsorships, campaigns }) {
       </div>
       <div className="stat-card blue">
         <div className="stat-icon-wrap blue"><span className="stat-icon">📊</span></div>
-        <div className="stat-value">{profile.engagement || 0}%</div>
-        <div className="stat-label">Taxa de engajamento</div>
+        <div className="stat-value">
+          {(() => {
+            const eng = calcEngagement(profile, sponsorships);
+            return <span className={`badge ${eng.badge}`} style={{ fontSize: 18, padding: '4px 14px' }}>{eng.label}</span>;
+          })()}
+        </div>
+        <div className="stat-label">Engajamento na rede</div>
       </div>
       <div className="stat-card orange">
         <div className="stat-icon-wrap orange"><span className="stat-icon">🤝</span></div>
@@ -967,9 +1108,12 @@ function CrowdfundingPage({ campaigns, onShowModal }) {
                   <span style={{ fontSize: 12, fontWeight: 600 }}>R${(c.raised || 0).toLocaleString()}</span>
                   <span style={{ fontSize: 11, color: 'var(--mu2)' }}>meta: R${(c.goal || 0).toLocaleString()}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                   <span style={{ fontSize: 11, color: 'var(--mu)' }}>⏰ até {c.deadline}</span>
-                  <button className="btn btn-primary btn-sm" onClick={() => onShowModal('donate', c)}>Apoiar R$</button>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button className="btn btn-primary btn-sm" onClick={() => onShowModal('donate', c)}>Apoiar R$</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => onShowModal('campaignProposal', c)}>Fazer Proposta</button>
+                  </div>
                 </div>
               </div>
             );
@@ -982,7 +1126,7 @@ function CrowdfundingPage({ campaigns, onShowModal }) {
 
 // ─── FEED PAGE ───────────────────────────────────────────────────────────────
 
-function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, following, onFollow, onUnfollow }) {
+function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, following, onFollow, onUnfollow, companies, sponsorships }) {
   const posts = profile.feed_preference === 'sport' && profile.sport
     ? allPosts.filter(p => p.sport === profile.sport || p.author_id === profile.id)
     : allPosts;
@@ -1043,6 +1187,8 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
         <div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">Feed vazio</div><div className="empty-text">Seja o primeiro a publicar!</div></div>
       )}
 
+      {posts.length > 0 && <EmpresaDoEsporteWidget companies={companies || []} sponsorships={sponsorships || []} />}
+
       {posts.map(post => (
         <div key={post.id} className="feed-post">
           <div className="post-header">
@@ -1066,7 +1212,7 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
               style={{ color: liked.includes(post.id) ? 'var(--g)' : undefined }}>
               {liked.includes(post.id) ? '💚' : '🤍'} {(post.likes || 0) + (liked.includes(post.id) ? 0 : 0)}
             </button>
-            <button className="post-action">💬 Comentar</button>
+            <CommentsSection postId={post.id} currentUserId={profile?.id} currentUserAvatar={profile?.avatar} />
             <button className="post-action">↗ Compartilhar</button>
           </div>
         </div>
@@ -1088,8 +1234,32 @@ function ProfilePage({ profile, onUpdateProfile }) {
     strava: profile.strava || '',
     avatar: profile.avatar || '🏅',
     feed_preference: profile.feed_preference || 'all',
+    results_bio: profile.results_bio || '',
   });
   const [saving, setSaving] = useState(false);
+  const [results, setResults] = useState([]);
+  const [resultForm, setResultForm] = useState({ event_name: '', position: '', medal: 'none', event_date: '', description: '' });
+  const [addingResult, setAddingResult] = useState(false);
+
+  useEffect(() => {
+    if (profile.role === 'atleta') {
+      api.getAthleteResults(profile.id).then(({ data }) => setResults(data || []));
+    }
+  }, [profile.id, profile.role]);
+
+  const handleAddResult = async () => {
+    if (!resultForm.event_name || !resultForm.event_date) return;
+    setAddingResult(true);
+    const { data } = await api.addAthleteResult({ ...resultForm, athlete_id: profile.id });
+    if (data) setResults(prev => [data, ...prev]);
+    setResultForm({ event_name: '', position: '', medal: 'none', event_date: '', description: '' });
+    setAddingResult(false);
+  };
+
+  const handleDeleteResult = async (id) => {
+    await api.deleteAthleteResult(id);
+    setResults(prev => prev.filter(r => r.id !== id));
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -1223,6 +1393,75 @@ function ProfilePage({ profile, onUpdateProfile }) {
           </div>
         </div>
       </div>
+
+      <div className="card mt-16">
+        <div className="card-header"><div className="card-title">🏆 Bio de Resultados</div></div>
+        <div className="card-body">
+          <div className="form-group">
+            <label className="form-label">Principais Conquistas</label>
+            <textarea className="form-textarea" rows={4}
+              placeholder="Ex: Campeão estadual de atletismo 2023, Top 3 na Maratona de SP 2024..."
+              value={form.results_bio} onChange={e => setForm(f => ({ ...f, results_bio: e.target.value }))} />
+          </div>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? 'Salvando...' : 'Salvar Bio'}</button>
+        </div>
+      </div>
+
+      {profile.role === 'atleta' && (
+        <div className="card mt-16">
+          <div className="card-header"><div className="card-title">📅 Histórico de Resultados</div><span className="badge badge-green">{results.length} eventos</span></div>
+          <div className="card-body">
+            <ResultsChart results={results} />
+            <div style={{ marginTop: 20, marginBottom: 12, fontWeight: 700, fontSize: 13, color: 'var(--tx)' }}>Adicionar Resultado</div>
+            <div className="grid-2" style={{ gap: 10, marginBottom: 10 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Nome do Evento</label>
+                <input className="form-input" placeholder="Ex: Maratona de SP" value={resultForm.event_name} onChange={e => setResultForm(f => ({ ...f, event_name: e.target.value }))} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Data</label>
+                <input className="form-input" type="date" value={resultForm.event_date} onChange={e => setResultForm(f => ({ ...f, event_date: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid-2" style={{ gap: 10, marginBottom: 10 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Posição / Resultado</label>
+                <input className="form-input" placeholder="Ex: 1º lugar" value={resultForm.position} onChange={e => setResultForm(f => ({ ...f, position: e.target.value }))} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Medalha</label>
+                <select className="form-select" value={resultForm.medal} onChange={e => setResultForm(f => ({ ...f, medal: e.target.value }))}>
+                  <option value="none">Nenhuma</option>
+                  <option value="gold">🥇 Ouro</option>
+                  <option value="silver">🥈 Prata</option>
+                  <option value="bronze">🥉 Bronze</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Descrição (opcional)</label>
+              <input className="form-input" placeholder="Detalhes sobre o evento..." value={resultForm.description} onChange={e => setResultForm(f => ({ ...f, description: e.target.value }))} />
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={handleAddResult} disabled={addingResult || !resultForm.event_name || !resultForm.event_date}>{addingResult ? 'Adicionando...' : '+ Adicionar'}</button>
+
+            {results.length > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--tx)', marginBottom: 10 }}>Resultados registrados</div>
+                {results.map(r => (
+                  <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--bd)' }}>
+                    <span style={{ fontSize: 18 }}>{r.medal === 'gold' ? '🥇' : r.medal === 'silver' ? '🥈' : r.medal === 'bronze' ? '🥉' : '🏅'}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{r.event_name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--mu2)' }}>{r.event_date}{r.position ? ` · ${r.position}` : ''}</div>
+                    </div>
+                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--rd)', borderColor: 'var(--rd2)' }} onClick={() => handleDeleteResult(r.id)}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1275,12 +1514,17 @@ function NotificationsPanel({ notifications, onClose, onMarkRead }) {
 
 function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentUserId, onClose }) {
   const [posts, setPosts] = useState([]);
+  const [athleteResults, setAthleteResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const isFollowing = following?.includes(athlete.id);
 
   useEffect(() => {
-    api.getPostsByAuthor(athlete.id).then(({ data }) => {
-      setPosts(data || []);
+    Promise.all([
+      api.getPostsByAuthor(athlete.id),
+      api.getAthleteResults(athlete.id),
+    ]).then(([postsRes, resultsRes]) => {
+      setPosts(postsRes.data || []);
+      setAthleteResults(resultsRes.data || []);
       setLoading(false);
     });
   }, [athlete.id]);
@@ -1315,6 +1559,17 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
         </div>
 
         <div className="athlete-profile-body">
+          {athlete.results_bio && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Space Grotesk',sans-serif", marginBottom: 8 }}>🏆 Principais Conquistas</div>
+              <div style={{ fontSize: 13, color: 'var(--mu2)', lineHeight: 1.7, background: 'var(--bk)', borderRadius: 10, padding: 14 }}>{athlete.results_bio}</div>
+            </div>
+          )}
+          {athleteResults.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <ResultsChart results={athleteResults} />
+            </div>
+          )}
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Space Grotesk',sans-serif", marginBottom: 16 }}>
             📋 Conquistas e Publicações
           </div>
@@ -1332,6 +1587,233 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── RESULTS CHART ───────────────────────────────────────────────────────────
+
+function ResultsChart({ results }) {
+  const data = getLast12MonthsData(results);
+  const maxEvents = Math.max(1, ...data.map(d => d.events));
+  return (
+    <div className="results-chart">
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--mu2)', marginBottom: 10 }}>Eventos & Medalhas — Últimos 12 meses</div>
+      <div className="chart-bar-row">
+        {data.map((d, i) => (
+          <div key={i} className="chart-bar-wrap">
+            {d.medals > 0 && <div className="medal-dot">{'🥇'.slice(0, d.medals > 0 ? 1 : 0)}</div>}
+            <div className="chart-bar" style={{
+              height: `${(d.events / maxEvents) * 100}%`,
+              background: d.events > 0 ? 'var(--grad)' : 'var(--bd)',
+              opacity: d.events > 0 ? 1 : 0.3,
+            }} title={`${d.label}: ${d.events} evento(s), ${d.medals} medalha(s)`} />
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {data.map((d, i) => <div key={i} className="chart-label" style={{ flex: 1 }}>{d.label}</div>)}
+      </div>
+      <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 11 }}>
+        <span style={{ color: 'var(--mu2)' }}>Total: <strong style={{ color: 'var(--tx)' }}>{results.length} eventos</strong></span>
+        <span style={{ color: 'var(--mu2)' }}>Medalhas: <strong style={{ color: 'var(--tx)' }}>{results.filter(r => r.medal && r.medal !== 'none').length}</strong></span>
+      </div>
+    </div>
+  );
+}
+
+// ─── COMMENTS SECTION ────────────────────────────────────────────────────────
+
+function CommentsSection({ postId, currentUserId, currentUserAvatar }) {
+  const [comments, setComments] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const load = async () => {
+    const { data } = await api.getComments(postId);
+    setComments(data || []);
+  };
+
+  const toggle = () => {
+    setOpen(o => !o);
+    if (!open && comments.length === 0) load();
+  };
+
+  const submit = async () => {
+    if (!text.trim()) return;
+    setLoading(true);
+    const { data } = await api.createComment(postId, currentUserId, text.trim());
+    if (data) setComments(prev => [...prev, { ...data, author: { name: data.author?.name, avatar: data.author?.avatar } }]);
+    setText('');
+    setLoading(false);
+  };
+
+  return (
+    <div>
+      <button className="post-action" onClick={toggle}>
+        💬 {comments.length > 0 ? comments.length : ''} Comentar
+      </button>
+      {open && (
+        <div className="comments-section">
+          {comments.map(c => (
+            <div key={c.id} className="comment-item">
+              <div className="comment-avatar">{c.author?.avatar || '🏅'}</div>
+              <div className="comment-bubble">
+                <div className="comment-author">{c.author?.name || 'Usuário'}</div>
+                <div className="comment-text">{c.content}</div>
+              </div>
+            </div>
+          ))}
+          <div className="comment-input-row">
+            <div className="comment-avatar">{currentUserAvatar || '🏅'}</div>
+            <input className="form-input" style={{ flex: 1, padding: '8px 12px', borderRadius: 10 }}
+              placeholder="Escreva um comentário..."
+              value={text} onChange={e => setText(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && submit()} />
+            <button className="btn btn-primary btn-sm" onClick={submit} disabled={loading || !text.trim()}>↑</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── EMPRESA DO ESPORTE WIDGET ────────────────────────────────────────────────
+
+function EmpresaDoEsporteWidget({ companies, sponsorships }) {
+  const empresa = getEmpresaDoEsporte(companies, sponsorships);
+  if (!empresa) return null;
+  return (
+    <div className="empresa-widget">
+      <div className="empresa-crown">🏆 Empresa do Esporte</div>
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
+          {empresa.avatar || '🏢'}
+        </div>
+        <div>
+          <div className="empresa-name">{empresa.name}</div>
+          {empresa.location && <div style={{ fontSize: 11, color: '#64748B' }}>📍 {empresa.location}</div>}
+        </div>
+      </div>
+      <div className="empresa-stats">
+        <div className="empresa-stat"><div className="empresa-stat-val">{(empresa.followers || 0).toLocaleString()}</div><div className="empresa-stat-label">Seguidores</div></div>
+        <div className="empresa-stat"><div className="empresa-stat-val">{empresa.activeSpons}</div><div className="empresa-stat-label">Atletas patrocinados</div></div>
+        <div className="empresa-stat"><div className="empresa-stat-val">{empresa.engagement || 0}</div><div className="empresa-stat-label">Engajamento</div></div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MESSAGES PAGE ────────────────────────────────────────────────────────────
+
+function MessagesPage({ profile, allProfiles }) {
+  const [conversations, setConversations] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    api.getConversations(profile.id).then(({ data }) => setConversations(data || []));
+  }, [profile.id]);
+
+  useEffect(() => {
+    if (selected) {
+      api.getMessages(profile.id, selected.id).then(({ data }) => {
+        setMessages(data || []);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      });
+    }
+  }, [selected, profile.id]);
+
+  const send = async () => {
+    if (!text.trim() || !selected || sending) return;
+    setSending(true);
+    const { data } = await api.sendMessage(profile.id, selected.id, text.trim());
+    if (data) setMessages(prev => [...prev, data]);
+    setText('');
+    setSending(false);
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
+
+  const otherProfiles = (allProfiles || []).filter(p => p.id !== profile.id);
+
+  function timeAgoShort(d) {
+    const diff = Math.max(0, Date.now() - new Date(d).getTime());
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return 'agora';
+    if (m < 60) return `${m}min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h`;
+    return `${Math.floor(h / 24)}d`;
+  }
+
+  return (
+    <div style={{ height: 'calc(100vh - 144px)' }}>
+      <div className="row-between mb-16">
+        <div className="section-title">💬 Mensagens</div>
+        <select className="form-input" style={{ width: 'auto', maxWidth: 240 }}
+          onChange={e => { const p = otherProfiles.find(x => x.id === e.target.value); if (p) setSelected(p); }}
+          defaultValue="">
+          <option value="" disabled>Nova conversa...</option>
+          {otherProfiles.map(p => <option key={p.id} value={p.id}>{p.name} ({p.role})</option>)}
+        </select>
+      </div>
+      <div className="messages-layout" style={{ height: 'calc(100% - 56px)' }}>
+        <div className="conv-list">
+          <div className="conv-list-header">Conversas</div>
+          {conversations.length === 0 && <div style={{ padding: 24, color: 'var(--mu)', fontSize: 13, textAlign: 'center' }}>Nenhuma conversa ainda</div>}
+          {conversations.map(c => (
+            <div key={c.id} className={`conv-item ${selected?.id === c.otherId ? 'active' : ''}`}
+              onClick={() => setSelected(c.other)}>
+              <div className="conv-avatar">{c.other?.avatar || '🏅'}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="conv-name">{c.other?.name}</div>
+                <div className="conv-preview">{c.content}</div>
+              </div>
+              {c.unread && <div className="conv-unread" />}
+            </div>
+          ))}
+        </div>
+
+        {selected ? (
+          <div className="chat-area">
+            <div className="chat-header">
+              <div className="conv-avatar">{selected.avatar || '🏅'}</div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--tx)', fontFamily: "'Space Grotesk',sans-serif" }}>{selected.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--mu2)' }}>{selected.role}</div>
+              </div>
+            </div>
+            <div className="chat-messages">
+              {messages.map(m => {
+                const isMine = m.sender_id === profile.id;
+                return (
+                  <div key={m.id} className={`chat-msg ${isMine ? 'mine' : 'theirs'}`}>
+                    <div className="chat-bubble">{m.content}</div>
+                    <div className="chat-time">{timeAgoShort(m.created_at)}</div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+            <div className="chat-input-area">
+              <textarea className="chat-input" rows={1} placeholder="Escreva uma mensagem..."
+                value={text} onChange={e => setText(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} />
+              <button className="btn btn-primary" onClick={send} disabled={sending || !text.trim()}>↑ Enviar</button>
+            </div>
+          </div>
+        ) : (
+          <div className="chat-empty">
+            <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--mu2)' }}>Selecione uma conversa</div>
+            <div style={{ fontSize: 12, color: 'var(--mu)', marginTop: 4 }}>ou inicie uma nova acima</div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1466,6 +1948,22 @@ function ModalContent({ type, data, athletes, onClose, onToast, onSave }) {
     </Modal>
   );
 
+  if (type === 'campaignProposal') return (
+    <Modal title={`Proposta para: ${data?.title}`} onClose={onClose} footer={footer('Enviar Proposta')}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20, background: 'var(--bk)', borderRadius: 12, padding: 14 }}>
+        <span style={{ fontSize: 30 }}>{data?.avatar}</span>
+        <div>
+          <div style={{ fontWeight: 700 }}>{data?.title}</div>
+          <div style={{ fontSize: 12, color: 'var(--mu2)' }}>Campanha de {data?.athlete}</div>
+          <div style={{ fontSize: 13, color: 'var(--g)', marginTop: 2 }}>Meta: R${(data?.goal || 0).toLocaleString()}</div>
+        </div>
+      </div>
+      <div className="form-group"><label className="form-label">Valor do Patrocínio (R$)</label><input className="form-input" type="number" placeholder="0,00" onChange={e => set('value', e.target.value)} /></div>
+      <div className="form-group"><label className="form-label">Contrapartidas que você oferece</label><textarea className="form-textarea" placeholder="Ex: Financiamento total da campanha em troca de logo nos uniformes, posts mensais..." onChange={e => set('contrapartidas', e.target.value)} /></div>
+      <div className="form-group"><label className="form-label">Mensagem para o Atleta</label><textarea className="form-textarea" placeholder="Apresente sua empresa e por que quer apoiar este atleta..." onChange={e => set('message', e.target.value)} /></div>
+    </Modal>
+  );
+
   return null;
 }
 
@@ -1490,6 +1988,8 @@ export default function App() {
   const [following, setFollowing] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [serviceRequests, setServiceRequests] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [allProfiles, setAllProfiles] = useState([]);
 
   const loadedUserRef = useRef(null);
 
@@ -1524,7 +2024,7 @@ export default function App() {
   }, [user]);
 
   async function loadAllData() {
-    const [p, a, s, c, sv, fw, notif, sr] = await Promise.all([
+    const [p, a, s, c, sv, fw, notif, sr, comp] = await Promise.all([
       api.getFeedPosts(),
       api.getAthletes(),
       api.getSponsorships(),
@@ -1533,6 +2033,7 @@ export default function App() {
       api.getFollowing(user.id),
       api.getNotifications(user.id),
       api.getServiceRequests(),
+      api.getCompanies(),
     ]);
     setPosts(p.data || []);
     setAthletes(a.data || []);
@@ -1542,10 +2043,12 @@ export default function App() {
     setFollowing(fw.data || []);
     setNotifications(notif.data || []);
     setServiceRequests(sr.data || []);
+    setCompanies(comp.data || []);
+    setAllProfiles([...(a.data || []), ...(comp.data || [])]);
   }
 
   function clearData() {
-    setPosts([]); setAthletes([]); setSponsorships([]); setCampaigns([]); setServices([]); setFollowing([]); setNotifications([]); setServiceRequests([]);
+    setPosts([]); setAthletes([]); setSponsorships([]); setCampaigns([]); setServices([]); setFollowing([]); setNotifications([]); setServiceRequests([]); setCompanies([]); setAllProfiles([]);
   }
 
   // ── Auth handlers ─────────────────────────────────────────────────────────
@@ -1660,6 +2163,17 @@ export default function App() {
           return true;
         }
         return false;
+      }
+
+      if (type === 'campaignProposal' && data?.id) {
+        const { data: sp } = await api.createSponsorship({
+          athlete_id: data.athlete_id, sponsor_id: user.id,
+          title: `Proposta para campanha: ${data.title}`,
+          value: Number(form.value) || 0,
+          contrapartidas: form.contrapartidas,
+          status: 'pending',
+        });
+        if (sp) setSponsorships(prev => [sp, ...prev]);
       }
 
       return true;
@@ -1799,7 +2313,11 @@ export default function App() {
                 onCreatePost={handleCreatePost}
                 onToggleLike={handleToggleLike}
                 following={following} onFollow={handleFollow} onUnfollow={handleUnfollow}
+                companies={companies} sponsorships={sponsorships}
               />
+            )}
+            {page === 'messages' && (
+              <MessagesPage profile={profile} allProfiles={allProfiles} />
             )}
             {page === 'athletes' && (
               <AthletesPage
