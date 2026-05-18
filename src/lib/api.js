@@ -258,4 +258,90 @@ export const api = {
     }
     return { error }
   },
+
+  // ─── SERVICE REQUESTS ──────────────────────────────────────────────────────
+
+  async getServiceRequests() {
+    const { data, error } = await supabase
+      .from('service_requests')
+      .select('*, athlete:athlete_id(name, avatar, sport, location)')
+      .order('created_at', { ascending: false })
+    return { data: data || [], error }
+  },
+
+  async createServiceRequest(request) {
+    const { data, error } = await supabase
+      .from('service_requests')
+      .insert(request)
+      .select()
+      .single()
+    return { data, error }
+  },
+
+  async notifyProfessionals(category, city, state, message, requestId) {
+    const { data: professionals } = await supabase
+      .from('profiles')
+      .select('id, location')
+      .eq('role', 'profissional')
+
+    const matching = (professionals || []).filter(p => {
+      if (!p.location) return true
+      const loc = p.location.toLowerCase()
+      const cityMatch = city ? loc.includes(city.toLowerCase()) : false
+      const stateMatch = state ? loc.includes(state.toLowerCase()) : false
+      return cityMatch || stateMatch
+    })
+
+    if (matching.length === 0) return { count: 0 }
+
+    const notifications = matching.map(p => ({
+      user_id: p.id,
+      type: 'service_request',
+      title: `Nova solicitação: ${category}`,
+      message,
+      data: { request_id: requestId },
+    }))
+
+    await supabase.from('notifications').insert(notifications)
+    return { count: matching.length }
+  },
+
+  // ─── NOTIFICATIONS ─────────────────────────────────────────────────────────
+
+  async getNotifications(userId) {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(30)
+    return { data: data || [], error }
+  },
+
+  async markNotificationsRead(userId) {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('user_id', userId)
+      .eq('read', false)
+    return { error }
+  },
+
+  // ─── ATHLETE POSTS ─────────────────────────────────────────────────────────
+
+  async getPostsByAuthor(authorId) {
+    const { data, error } = await supabase
+      .from('feed_posts')
+      .select('*, author:author_id(name, avatar, sport)')
+      .eq('author_id', authorId)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    return { data: (data || []).map(p => ({
+      ...p,
+      author: p.author?.name || 'Anônimo',
+      avatar: p.author?.avatar || '🏅',
+      sport: p.author?.sport || '',
+      time: timeAgo(p.created_at),
+    })), error }
+  },
 }

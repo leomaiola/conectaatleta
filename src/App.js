@@ -336,6 +336,29 @@ const styles = `
   .font-bold{font-weight:700}
   .section-title{font-size:20px;font-weight:800;color:var(--tx);margin-bottom:4px;letter-spacing:-0.5px;font-family:'Space Grotesk',sans-serif}
   .section-sub{font-size:13px;color:var(--mu2)}
+
+  /* ── NOTIFICATIONS ── */
+  .topbar-notif-wrap { position: relative; }
+  .notif-count { position: absolute; top: -5px; right: -5px; background: var(--rd); color: #fff; font-size: 9px; font-weight: 800; min-width: 18px; height: 18px; border-radius: 100px; display: flex; align-items: center; justify-content: center; padding: 0 4px; border: 2px solid #fff; }
+  .notif-panel { position: absolute; top: 50px; right: 0; background: var(--d1); border: 1.5px solid var(--bd); border-radius: 18px; box-shadow: 0 20px 60px rgba(15,23,42,0.16); width: 380px; z-index: 300; overflow: hidden; animation: slideUp 0.2s ease; }
+  .notif-panel-header { padding: 18px 22px 14px; border-bottom: 1px solid var(--bd); display: flex; align-items: center; justify-content: space-between; }
+  .notif-panel-title { font-size: 15px; font-weight: 700; color: var(--tx); font-family: 'Space Grotesk', sans-serif; }
+  .notif-list { max-height: 400px; overflow-y: auto; }
+  .notif-item { padding: 14px 22px; border-bottom: 1px solid var(--bd); cursor: pointer; transition: background 0.1s; }
+  .notif-item:hover { background: var(--bk); }
+  .notif-item.unread { background: linear-gradient(135deg, rgba(16,185,129,0.05), rgba(59,130,246,0.04)); border-left: 3px solid var(--g); }
+  .notif-item-title { font-size: 13px; font-weight: 700; color: var(--tx); margin-bottom: 3px; }
+  .notif-item-msg { font-size: 12px; color: var(--mu2); line-height: 1.5; }
+  .notif-item-time { font-size: 10px; color: var(--mu); margin-top: 5px; font-weight: 600; }
+  .notif-empty { padding: 40px 22px; text-align: center; color: var(--mu); font-size: 13px; }
+
+  /* ── ATHLETE PROFILE VIEW ── */
+  .athlete-profile-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .athlete-profile-modal { background: var(--bk); border-radius: 24px; width: 100%; max-width: 680px; max-height: 88vh; overflow-y: auto; animation: slideUp 0.25s ease; box-shadow: 0 24px 80px rgba(15,23,42,0.25); }
+  .athlete-profile-header { background: linear-gradient(135deg, var(--sb), #1E293B); padding: 28px; position: relative; border-radius: 24px 24px 0 0; }
+  .athlete-profile-close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.15s; }
+  .athlete-profile-close:hover { background: rgba(255,255,255,0.2); }
+  .athlete-profile-body { padding: 24px 28px; }
 `;
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -664,7 +687,7 @@ function Dashboard({ profile, user, sponsorships, campaigns, posts, athletes, se
 
 // ─── ATHLETES PAGE ───────────────────────────────────────────────────────────
 
-function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, currentUserId }) {
+function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, currentUserId, onViewProfile }) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const sports = ['all', ...new Set(athletes.map(a => a.sport).filter(Boolean))].slice(0, 8);
@@ -723,14 +746,12 @@ function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, 
                   <div className="metric-label">Engajamento</div>
                 </div>
               </div>
-              <div className="row mt-16" style={{ gap: 8 }}>
+              <div className="row mt-16" style={{ gap: 8, flexWrap: 'wrap' }}>
+                <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => onViewProfile(a)}>Ver Perfil</button>
                 {currentUserId !== a.id && (
                   following?.includes(a.id)
-                    ? <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--g)', color: 'var(--g)' }} onClick={() => onUnfollow(a.id)}>✓ Seguindo</button>
+                    ? <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--g)', color: 'var(--g)' }} onClick={() => onUnfollow(a.id)}>✓</button>
                     : <button className="btn btn-primary btn-sm" onClick={() => onFollow(a.id)}>+ Seguir</button>
-                )}
-                {currentUserId !== a.id && (
-                  <button className="btn btn-ghost btn-sm" onClick={() => onShowModal('sponsorProposal', a)}>Patrocinar</button>
                 )}
               </div>
             </div>
@@ -812,10 +833,13 @@ function SponsorshipsPage({ sponsorships, userId, onShowModal }) {
 
 // ─── MARKETPLACE PAGE ────────────────────────────────────────────────────────
 
-function MarketplacePage({ services, onShowModal }) {
+function MarketplacePage({ services, onShowModal, userRole, serviceRequests }) {
   const [catFilter, setCatFilter] = useState('all');
+  const [tab, setTab] = useState('services');
   const cats = ['all', ...new Set(services.map(s => s.category).filter(Boolean))];
   const filtered = services.filter(s => catFilter === 'all' || s.category === catFilter);
+  const isProfissional = userRole === 'profissional';
+  const isAtleta = userRole === 'atleta' || userRole === 'clube' || userRole === 'apoiador';
 
   return (
     <div>
@@ -824,8 +848,44 @@ function MarketplacePage({ services, onShowModal }) {
           <div className="section-title">🩺 Profissionais do Esporte</div>
           <div className="text-muted text-sm">Encontre os melhores profissionais especializados</div>
         </div>
-        <button className="btn btn-ghost" onClick={() => onShowModal('addService')}>+ Oferecer Serviço</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {isAtleta && <button className="btn btn-ghost" onClick={() => onShowModal('requestProfessional')}>🔍 Solicitar Profissional</button>}
+          {isProfissional && <button className="btn btn-primary" onClick={() => onShowModal('addService')}>+ Oferecer Serviço</button>}
+        </div>
       </div>
+
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: 'var(--bk)', borderRadius: 12, padding: 4, border: '1.5px solid var(--bd)', width: 'fit-content' }}>
+        {[['services','Serviços'],['requests','Solicitações de Atletas']].map(([k,l]) => (
+          <button key={k} onClick={() => setTab(k)} className="btn btn-sm"
+            style={{ background: tab === k ? 'var(--grad)' : 'transparent', color: tab === k ? '#fff' : 'var(--mu2)', boxShadow: tab === k ? '0 4px 12px rgba(16,185,129,0.3)' : 'none', border: 'none' }}>
+            {l}{k === 'requests' && serviceRequests.length > 0 && <span style={{ marginLeft: 6, background: 'rgba(255,255,255,0.3)', borderRadius: 100, padding: '1px 7px', fontSize: 10 }}>{serviceRequests.length}</span>}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'requests' && (
+        <div>
+          {serviceRequests.length === 0 ? (
+            <div className="empty-state"><div className="empty-icon">🔍</div><div className="empty-title">Nenhuma solicitação ainda</div><div className="empty-text">Atletas ainda não fizeram pedidos de profissionais.</div></div>
+          ) : serviceRequests.map(sr => (
+            <div key={sr.id} className="card mb-16">
+              <div className="card-body">
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: 28 }}>{sr.athlete?.avatar || '🏃'}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{sr.athlete?.name || 'Atleta'} busca <span style={{ color: 'var(--g)' }}>{sr.category}</span></div>
+                    {sr.city && <div style={{ fontSize: 12, color: 'var(--mu2)', marginBottom: 6 }}>📍 {sr.city}{sr.state ? `, ${sr.state}` : ''}</div>}
+                    {sr.description && <div style={{ fontSize: 13, color: 'var(--mu2)', lineHeight: 1.6 }}>{sr.description}</div>}
+                  </div>
+                  <span className="badge badge-blue">{sr.category}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'services' && <>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
         {cats.map(c => (
@@ -860,6 +920,7 @@ function MarketplacePage({ services, onShowModal }) {
           ))}
         </div>
       )}
+      </>}
     </div>
   );
 }
@@ -921,7 +982,10 @@ function CrowdfundingPage({ campaigns, onShowModal }) {
 
 // ─── FEED PAGE ───────────────────────────────────────────────────────────────
 
-function FeedPage({ profile, posts, onCreatePost, onToggleLike, following, onFollow, onUnfollow }) {
+function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, following, onFollow, onUnfollow }) {
+  const posts = profile.feed_preference === 'sport' && profile.sport
+    ? allPosts.filter(p => p.sport === profile.sport || p.author_id === profile.id)
+    : allPosts;
   const [liked, setLiked] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`liked_${profile?.id}`) || '[]'); }
     catch { return []; }
@@ -1023,6 +1087,7 @@ function ProfilePage({ profile, onUpdateProfile }) {
     youtube: profile.youtube || '',
     strava: profile.strava || '',
     avatar: profile.avatar || '🏅',
+    feed_preference: profile.feed_preference || 'all',
   });
   const [saving, setSaving] = useState(false);
 
@@ -1122,6 +1187,32 @@ function ProfilePage({ profile, onUpdateProfile }) {
           </div>
 
           <div className="card">
+            <div className="card-header"><div className="card-title">🎯 Área de Interesse</div></div>
+            <div className="card-body">
+              <p style={{ fontSize: 13, color: 'var(--mu2)', lineHeight: 1.6, marginBottom: 16 }}>
+                Escolha quais conteúdos você quer ver no feed.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  { value: 'all', label: '🌎 Todas as modalidades', desc: 'Ver publicações de todos os atletas e usuários' },
+                  { value: 'sport', label: `🏅 Apenas ${profile.sport || 'minha modalidade'}`, desc: 'Ver apenas publicações da sua modalidade esportiva' },
+                ].map(opt => (
+                  <label key={opt.value} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: 14, borderRadius: 12, border: `1.5px solid ${form.feed_preference === opt.value ? 'var(--g)' : 'var(--bd)'}`, background: form.feed_preference === opt.value ? 'linear-gradient(135deg,#ECFDF5,#EFF6FF)' : 'var(--bk)', cursor: 'pointer', transition: 'all 0.15s' }}>
+                    <input type="radio" name="feed_pref" value={opt.value} checked={form.feed_preference === opt.value} onChange={() => setForm(f => ({ ...f, feed_preference: opt.value }))} style={{ marginTop: 2 }} />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{opt.label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--mu2)' }}>{opt.desc}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={handleSave} disabled={saving}>
+                {saving ? 'Salvando...' : 'Salvar Preferência'}
+              </button>
+            </div>
+          </div>
+
+          <div className="card">
             <div className="card-header"><div className="card-title">📄 Mídia Kit</div><span className="badge badge-purple">IA</span></div>
             <div className="card-body">
               <p style={{ fontSize: 13, color: 'var(--mu2)', lineHeight: 1.6, marginBottom: 16 }}>
@@ -1130,6 +1221,116 @@ function ProfilePage({ profile, onUpdateProfile }) {
               <button className="btn btn-primary">🤖 Gerar Mídia Kit com IA</button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── NOTIFICATIONS PANEL ─────────────────────────────────────────────────────
+
+function NotificationsPanel({ notifications, onClose, onMarkRead }) {
+  const unread = notifications.filter(n => !n.read).length;
+  useEffect(() => { if (unread > 0) onMarkRead(); }, []);
+
+  function timeAgoShort(d) {
+    const diff = Math.max(0, Date.now() - new Date(d).getTime());
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return 'agora';
+    if (m < 60) return `${m}min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h`;
+    return `${Math.floor(h / 24)}d`;
+  }
+
+  const typeIcon = { service_request: '🔔', info: 'ℹ️', follow: '👤' };
+
+  return (
+    <div className="notif-panel">
+      <div className="notif-panel-header">
+        <div className="notif-panel-title">Notificações {unread > 0 && <span className="badge badge-red" style={{ marginLeft: 8 }}>{unread} novas</span>}</div>
+        <button className="modal-close" onClick={onClose}>×</button>
+      </div>
+      <div className="notif-list">
+        {notifications.length === 0 ? (
+          <div className="notif-empty">Nenhuma notificação ainda 🔕</div>
+        ) : notifications.map(n => (
+          <div key={n.id} className={`notif-item ${!n.read ? 'unread' : ''}`}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>{typeIcon[n.type] || '🔔'}</span>
+              <div style={{ flex: 1 }}>
+                <div className="notif-item-title">{n.title}</div>
+                {n.message && <div className="notif-item-msg">{n.message}</div>}
+                <div className="notif-item-time">{timeAgoShort(n.created_at)}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── ATHLETE PROFILE VIEW ─────────────────────────────────────────────────────
+
+function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentUserId, onClose }) {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const isFollowing = following?.includes(athlete.id);
+
+  useEffect(() => {
+    api.getPostsByAuthor(athlete.id).then(({ data }) => {
+      setPosts(data || []);
+      setLoading(false);
+    });
+  }, [athlete.id]);
+
+  return (
+    <div className="athlete-profile-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="athlete-profile-modal">
+        <div className="athlete-profile-header">
+          <button className="athlete-profile-close" onClick={onClose}>×</button>
+          <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+            <div style={{ width: 72, height: 72, borderRadius: 18, background: 'var(--grad)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, flexShrink: 0, border: '3px solid rgba(255,255,255,0.2)' }}>
+              {athlete.avatar || '🏅'}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Space Grotesk',sans-serif", letterSpacing: -0.5, marginBottom: 4 }}>{athlete.name}</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                {athlete.sport && <span className="badge badge-green">{athlete.sport}</span>}
+                {athlete.location && <span style={{ fontSize: 12, color: '#94A3B8' }}>📍 {athlete.location}</span>}
+              </div>
+              {athlete.bio && <p style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.6, marginBottom: 14 }}>{athlete.bio}</p>}
+              <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+                <div><div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Space Grotesk',sans-serif" }}>{(athlete.followers || 0).toLocaleString()}</div><div style={{ fontSize: 10, color: '#64748B', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>Seguidores</div></div>
+                <div><div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Space Grotesk',sans-serif" }}>{athlete.engagement || 0}%</div><div style={{ fontSize: 10, color: '#64748B', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>Engajamento</div></div>
+              </div>
+              {currentUserId !== athlete.id && (
+                isFollowing
+                  ? <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--g4)', color: 'var(--g4)', background: 'rgba(110,231,183,0.1)' }} onClick={() => onUnfollow(athlete.id)}>✓ Seguindo</button>
+                  : <button className="btn btn-primary btn-sm" onClick={() => onFollow(athlete.id)}>+ Seguir</button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="athlete-profile-body">
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Space Grotesk',sans-serif", marginBottom: 16 }}>
+            📋 Conquistas e Publicações
+          </div>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: 40, color: 'var(--mu)' }}>Carregando...</div>
+          ) : posts.length === 0 ? (
+            <div className="empty-state" style={{ padding: '32px 0' }}>
+              <div className="empty-icon">📋</div>
+              <div className="empty-title">Nenhuma publicação ainda</div>
+            </div>
+          ) : posts.map(post => (
+            <div key={post.id} className="feed-post">
+              <div className="post-content" style={{ marginBottom: 8 }}>{post.content}</div>
+              <div style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 600 }}>{post.time}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -1247,6 +1448,24 @@ function ModalContent({ type, data, athletes, onClose, onToast, onSave }) {
     </Modal>
   );
 
+  if (type === 'requestProfessional') return (
+    <Modal title="Solicitar Profissional" onClose={onClose} footer={footer('Enviar Solicitação')}>
+      <div style={{ background: 'linear-gradient(135deg, #ECFDF5, #EFF6FF)', borderRadius: 12, padding: 14, marginBottom: 18, fontSize: 13, color: 'var(--mu2)' }}>
+        💡 Sua solicitação será enviada para todos os profissionais da categoria e região selecionadas.
+      </div>
+      <div className="form-group">
+        <label className="form-label">Categoria</label>
+        <select className="form-select" onChange={e => set('category', e.target.value)}>
+          <option value="">Selecione...</option>
+          {['Nutrição','Fisioterapia','Psicologia','Fotografia','Coaching','Preparação Física','Medicina Esportiva','Marketing','Agenciamento'].map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+      <div className="form-group"><label className="form-label">Cidade</label><input className="form-input" placeholder="Ex: Jundiaí" onChange={e => set('city', e.target.value)} /></div>
+      <div className="form-group"><label className="form-label">Estado</label><input className="form-input" placeholder="Ex: São Paulo" onChange={e => set('state', e.target.value)} /></div>
+      <div className="form-group"><label className="form-label">Descreva sua necessidade</label><textarea className="form-textarea" placeholder="Ex: Busco fisioterapeuta especializado em esportes de endurance para acompanhamento semanal..." onChange={e => set('description', e.target.value)} /></div>
+    </Modal>
+  );
+
   return null;
 }
 
@@ -1259,6 +1478,8 @@ export default function App() {
   const [page, setPage] = useState('dashboard');
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [selectedAthlete, setSelectedAthlete] = useState(null);
 
   // Data
   const [posts, setPosts] = useState([]);
@@ -1267,6 +1488,10 @@ export default function App() {
   const [campaigns, setCampaigns] = useState([]);
   const [services, setServices] = useState([]);
   const [following, setFollowing] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [serviceRequests, setServiceRequests] = useState([]);
+
+  const loadedUserRef = useRef(null);
 
   // ── Session management ────────────────────────────────────────────────────
   useEffect(() => {
@@ -1281,26 +1506,33 @@ export default function App() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') { setUser(null); setProfile(null); clearData(); }
-      if (event === 'SIGNED_IN' && session?.user) setUser(session.user);
+      if (event === 'SIGNED_OUT') { setUser(null); setProfile(null); clearData(); loadedUserRef.current = null; }
+      if (event === 'SIGNED_IN' && session?.user) {
+        setUser(prev => prev?.id === session.user.id ? prev : session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // ── Load all data after login ─────────────────────────────────────────────
+  // ── Load all data after login (only once per user session) ──────────────────
   useEffect(() => {
-    if (user) loadAllData();
+    if (user?.id && user.id !== loadedUserRef.current) {
+      loadedUserRef.current = user.id;
+      loadAllData();
+    }
   }, [user]);
 
   async function loadAllData() {
-    const [p, a, s, c, sv, fw] = await Promise.all([
+    const [p, a, s, c, sv, fw, notif, sr] = await Promise.all([
       api.getFeedPosts(),
       api.getAthletes(),
       api.getSponsorships(),
       api.getCampaigns(),
       api.getServices(),
       api.getFollowing(user.id),
+      api.getNotifications(user.id),
+      api.getServiceRequests(),
     ]);
     setPosts(p.data || []);
     setAthletes(a.data || []);
@@ -1308,10 +1540,12 @@ export default function App() {
     setCampaigns(c.data || []);
     setServices(sv.data || []);
     setFollowing(fw.data || []);
+    setNotifications(notif.data || []);
+    setServiceRequests(sr.data || []);
   }
 
   function clearData() {
-    setPosts([]); setAthletes([]); setSponsorships([]); setCampaigns([]); setServices([]); setFollowing([]);
+    setPosts([]); setAthletes([]); setSponsorships([]); setCampaigns([]); setServices([]); setFollowing([]); setNotifications([]); setServiceRequests([]);
   }
 
   // ── Auth handlers ─────────────────────────────────────────────────────────
@@ -1412,11 +1646,36 @@ export default function App() {
         });
       }
 
+      if (type === 'requestProfessional') {
+        if (!form.category) return false;
+        const { data: sr } = await api.createServiceRequest({
+          athlete_id: user.id, category: form.category,
+          description: form.description, city: form.city, state: form.state,
+        });
+        if (sr) {
+          setServiceRequests(prev => [{ ...sr, athlete: { name: profile.name, avatar: profile.avatar } }, ...prev]);
+          const msg = `${profile.name} busca ${form.category}${form.city ? ` em ${form.city}` : ''}${form.state ? `, ${form.state}` : ''}`;
+          const { count } = await api.notifyProfessionals(form.category, form.city, form.state, msg, sr.id);
+          showToast(`Solicitação enviada! ${count} profissional(is) notificado(s).`);
+          return true;
+        }
+        return false;
+      }
+
       return true;
     } catch (e) {
       console.error('handleModalSave:', e);
       showToast('❌ Erro ao salvar. Tente novamente.');
       return false;
+    }
+  };
+
+  const handleOpenNotifications = async () => {
+    setNotifOpen(prev => !prev);
+    const unread = notifications.filter(n => !n.read);
+    if (unread.length > 0) {
+      await api.markNotificationsRead(user.id);
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     }
   };
 
@@ -1506,7 +1765,23 @@ export default function App() {
               <span style={{ color: 'var(--mu)', fontSize: 14 }}>🔍</span>
               <input placeholder="Buscar atletas, serviços..." />
             </div>
-            <button className="topbar-btn" title="Notificações">🔔</button>
+            <div className="topbar-notif-wrap">
+              <button className="topbar-btn" title="Notificações" onClick={handleOpenNotifications}>🔔
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="notif-count">{notifications.filter(n => !n.read).length}</span>
+                )}
+              </button>
+              {notifOpen && (
+                <NotificationsPanel
+                  notifications={notifications}
+                  onClose={() => setNotifOpen(false)}
+                  onMarkRead={() => {
+                    api.markNotificationsRead(user.id);
+                    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                  }}
+                />
+              )}
+            </div>
             <button className="topbar-btn" title="Config" onClick={() => setPage('profile')}>⚙</button>
           </div>
 
@@ -1530,14 +1805,17 @@ export default function App() {
               <AthletesPage
                 athletes={athletes} onShowModal={showModal}
                 following={following} onFollow={handleFollow} onUnfollow={handleUnfollow}
-                currentUserId={user.id}
+                currentUserId={user.id} onViewProfile={setSelectedAthlete}
               />
             )}
             {page === 'sponsorships' && (
               <SponsorshipsPage sponsorships={sponsorships} userId={user.id} onShowModal={showModal} />
             )}
             {page === 'marketplace' && (
-              <MarketplacePage services={services} onShowModal={showModal} />
+              <MarketplacePage
+                services={services} onShowModal={showModal}
+                userRole={profile.role} serviceRequests={serviceRequests}
+              />
             )}
             {page === 'crowdfunding' && (
               <CrowdfundingPage campaigns={campaigns} onShowModal={showModal} />
@@ -1557,6 +1835,17 @@ export default function App() {
           onClose={() => setModal(null)}
           onToast={showToast}
           onSave={handleModalSave}
+        />
+      )}
+
+      {selectedAthlete && (
+        <AthleteProfileView
+          athlete={selectedAthlete}
+          following={following}
+          onFollow={handleFollow}
+          onUnfollow={handleUnfollow}
+          currentUserId={user.id}
+          onClose={() => setSelectedAthlete(null)}
         />
       )}
 

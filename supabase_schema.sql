@@ -230,3 +230,47 @@ create policy "follows_insert" on follows for insert with check (auth.uid() = fo
 
 drop policy if exists "follows_delete" on follows;
 create policy "follows_delete" on follows for delete using (auth.uid() = follower_id);
+
+-- ─── SERVICE REQUESTS ────────────────────────────────────────────────────────
+
+create table if not exists service_requests (
+  id uuid primary key default gen_random_uuid(),
+  athlete_id uuid references profiles(id) on delete cascade not null,
+  category text not null,
+  description text,
+  city text,
+  state text,
+  created_at timestamptz default now()
+);
+
+alter table service_requests enable row level security;
+
+drop policy if exists "sr_select" on service_requests;
+create policy "sr_select" on service_requests for select using (true);
+
+drop policy if exists "sr_insert" on service_requests;
+create policy "sr_insert" on service_requests for insert with check (auth.uid() = athlete_id);
+
+-- ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
+
+create table if not exists notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade not null,
+  type text default 'info',
+  title text not null,
+  message text,
+  read boolean default false,
+  data jsonb,
+  created_at timestamptz default now()
+);
+
+alter table notifications enable row level security;
+
+drop policy if exists "notif_select" on notifications;
+create policy "notif_select" on notifications for select using (auth.uid() = user_id);
+
+drop policy if exists "notif_insert" on notifications;
+create policy "notif_insert" on notifications for insert with check (auth.uid() is not null);
+
+drop policy if exists "notif_update" on notifications;
+create policy "notif_update" on notifications for update using (auth.uid() = user_id);
