@@ -443,4 +443,18 @@ export const api = {
       .eq('read', false)
     return count || 0
   },
+
+  // ─── STORAGE / AVATAR ──────────────────────────────────────────────────────
+
+  async uploadAvatar(userId, file) {
+    const ext = file.name.split('.').pop().toLowerCase()
+    const path = `${userId}/avatar.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, file, { upsert: true, contentType: file.type })
+    if (uploadError) return { data: null, error: uploadError }
+    const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+    // cache-bust so the browser picks up the new image
+    return { data: `${data.publicUrl}?t=${Date.now()}`, error: null }
+  },
 }

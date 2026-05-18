@@ -426,6 +426,20 @@ function initials(name) {
   return (name || 'U').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 }
 
+function isUrl(v) { return v && (v.startsWith('http') || v.startsWith('blob')); }
+
+function Avatar({ src, size = 40, radius = '50%', fontSize, style = {}, className = '' }) {
+  const fs = fontSize || Math.round(size * 0.45);
+  if (isUrl(src)) {
+    return <img src={src} alt="" style={{ width: size, height: size, borderRadius: radius, objectFit: 'cover', flexShrink: 0, ...style }} className={className} />;
+  }
+  return (
+    <div style={{ width: size, height: size, borderRadius: radius, background: 'var(--grad)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fs, flexShrink: 0, ...style }} className={className}>
+      {src || '🏅'}
+    </div>
+  );
+}
+
 function calcEngagement(profile, sponsorships) {
   const activeSpons = sponsorships.filter(s =>
     (s.athlete_id === profile.id || s.sponsor_id === profile.id) && s.status === 'active'
@@ -763,7 +777,7 @@ function Dashboard({ profile, user, sponsorships, campaigns, posts, athletes, se
             {posts.slice(0, 3).map(post => (
               <div key={post.id} className="feed-post" style={{ marginBottom: 8 }}>
                 <div className="post-header">
-                  <div className="post-avatar">{post.avatar}</div>
+                  <Avatar src={post.avatar} size={38} radius={12} />
                   <div>
                     <div className="post-author">{post.author}</div>
                     <div className="post-meta"><span className="badge badge-muted">{post.sport}</span><span>{post.time}</span></div>
@@ -872,7 +886,7 @@ function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, 
           {filtered.map(a => (
             <div key={a.id} className="athlete-card">
               <div className="athlete-avatar-wrap">
-                <div className="athlete-avatar">{a.avatar || '🏅'}</div>
+                <Avatar src={a.avatar} size={56} radius={16} />
                 {a.sport && <div className="athlete-sport-badge">{a.sport}</div>}
               </div>
               <div className="athlete-name">{a.name}</div>
@@ -1164,7 +1178,7 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
       <div className="card mb-16">
         <div className="card-body">
           <div style={{ display: 'flex', gap: 12 }}>
-            <div className="post-avatar">{profile.avatar || '🏅'}</div>
+            <Avatar src={profile.avatar} size={44} radius={14} />
             <div style={{ flex: 1 }}>
               <textarea className="form-textarea" style={{ marginBottom: 12 }}
                 placeholder="Compartilhe seu treino, conquista ou dica..."
@@ -1192,7 +1206,7 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
       {posts.map(post => (
         <div key={post.id} className="feed-post">
           <div className="post-header">
-            <div className="post-avatar">{post.avatar}</div>
+            <Avatar src={post.avatar} size={44} radius={14} />
             <div style={{ flex: 1 }}>
               <div className="post-author">{post.author}</div>
               <div className="post-meta">
@@ -1237,6 +1251,23 @@ function ProfilePage({ profile, onUpdateProfile }) {
     results_bio: profile.results_bio || '',
   });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleAvatarClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert('Imagem deve ter no máximo 5MB.'); return; }
+    setUploading(true);
+    const { data: url, error } = await api.uploadAvatar(profile.id, file);
+    if (error) { alert('Erro ao fazer upload. Tente novamente.'); setUploading(false); return; }
+    const updated = { ...form, avatar: url };
+    setForm(updated);
+    await onUpdateProfile({ avatar: url });
+    setUploading(false);
+  };
   const [results, setResults] = useState([]);
   const [resultForm, setResultForm] = useState({ event_name: '', position: '', medal: 'none', event_date: '', description: '' });
   const [addingResult, setAddingResult] = useState(false);
@@ -1270,7 +1301,23 @@ function ProfilePage({ profile, onUpdateProfile }) {
   return (
     <div>
       <div className="profile-hero">
-        <div className="profile-avatar-lg">{profile.avatar || '🏅'}</div>
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+          <div className="profile-avatar-lg" onClick={handleAvatarClick}
+            style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+            title="Clique para alterar foto">
+            {isUrl(form.avatar)
+              ? <img src={form.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 20 }} />
+              : <span>{form.avatar || '🏅'}</span>
+            }
+            {uploading && (
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 20 }}>
+                <div className="loading-spinner" style={{ width: 24, height: 24, borderWidth: 2 }} />
+              </div>
+            )}
+          </div>
+          <button onClick={handleAvatarClick} style={{ position: 'absolute', bottom: -6, right: -6, width: 28, height: 28, borderRadius: '50%', background: 'var(--grad)', border: '2px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Trocar foto">📷</button>
+        </div>
         <div className="profile-info">
           <div className="profile-name">{profile.name}</div>
           <div className="profile-meta-row">
@@ -2241,7 +2288,10 @@ export default function App() {
           </div>
 
           <div className="sidebar-user">
-            <div className="user-avatar">{initials(profile.name)}</div>
+            {isUrl(profile.avatar)
+              ? <img src={profile.avatar} alt="" style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
+              : <div className="user-avatar">{initials(profile.name)}</div>
+            }
             <div>
               <div className="user-name">{profile.name?.split(' ')[0] || 'Usuário'}</div>
               <div className="user-role">{ROLES.find(r => r.key === profile.role)?.label || 'Atleta'}</div>
