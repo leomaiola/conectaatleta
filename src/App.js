@@ -842,7 +842,7 @@ function Dashboard({ profile, user, sponsorships, campaigns, posts, athletes, se
 
 // ─── ATHLETES PAGE ───────────────────────────────────────────────────────────
 
-function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, currentUserId, onViewProfile }) {
+function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, currentUserId, onViewProfile, onOpenChat }) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const sports = ['all', ...new Set(athletes.map(a => a.sport).filter(Boolean))].slice(0, 8);
@@ -904,9 +904,13 @@ function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, 
               <div className="row mt-16" style={{ gap: 8, flexWrap: 'wrap' }}>
                 <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => onViewProfile(a)}>Ver Perfil</button>
                 {currentUserId !== a.id && (
-                  following?.includes(a.id)
-                    ? <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--g)', color: 'var(--g)' }} onClick={() => onUnfollow(a.id)}>✓</button>
-                    : <button className="btn btn-primary btn-sm" onClick={() => onFollow(a.id)}>+ Seguir</button>
+                  <>
+                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g)', borderColor: 'var(--g)' }} onClick={() => onOpenChat?.(a.id)}>💬</button>
+                    {following?.includes(a.id)
+                      ? <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--g)', color: 'var(--g)' }} onClick={() => onUnfollow(a.id)}>✓</button>
+                      : <button className="btn btn-primary btn-sm" onClick={() => onFollow(a.id)}>+ Seguir</button>
+                    }
+                  </>
                 )}
               </div>
             </div>
@@ -919,7 +923,7 @@ function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, 
 
 // ─── SPONSORSHIPS PAGE ───────────────────────────────────────────────────────
 
-function SponsorshipsPage({ sponsorships, userId, onShowModal }) {
+function SponsorshipsPage({ sponsorships, userId, onShowModal, onOpenChat }) {
   const mine = sponsorships.filter(s => s.athlete_id === userId || s.sponsor_id === userId);
   const statusColor = { active: 'badge-green', pending: 'badge-yellow', closed: 'badge-muted' };
   const statusLabel = { active: 'Ativo', pending: 'Pendente', closed: 'Encerrado' };
@@ -946,18 +950,22 @@ function SponsorshipsPage({ sponsorships, userId, onShowModal }) {
           <div className="empty-state"><div className="empty-icon">🤝</div><div className="empty-title">Nenhum patrocínio ainda</div><div className="empty-text">Crie uma proposta para começar.</div></div>
         ) : (
           <table className="table">
-            <thead><tr><th>Patrocínio</th><th>Atleta</th><th>Patrocinador</th><th>Valor/ano</th><th>Contrapartidas</th><th>Status</th></tr></thead>
+            <thead><tr><th>Patrocínio</th><th>Atleta</th><th>Patrocinador</th><th>Valor/ano</th><th>Contrapartidas</th><th>Status</th><th></th></tr></thead>
             <tbody>
-              {mine.map(s => (
-                <tr key={s.id}>
-                  <td><div style={{ fontWeight: 600, fontSize: 13 }}>{s.title}</div></td>
-                  <td><span style={{ fontSize: 13 }}>{s.athlete}</span></td>
-                  <td><span style={{ fontSize: 13, color: 'var(--mu2)' }}>{s.sponsor}</span></td>
-                  <td><span className="text-mono text-green" style={{ fontSize: 13 }}>R${(s.value || 0).toLocaleString()}</span></td>
-                  <td><span style={{ fontSize: 12, color: 'var(--mu2)' }}>{s.contrapartidas}</span></td>
-                  <td><span className={`badge ${statusColor[s.status] || 'badge-muted'}`}>{statusLabel[s.status] || s.status}</span></td>
-                </tr>
-              ))}
+              {mine.map(s => {
+                const contactId = s.athlete_id === userId ? s.sponsor_id : s.athlete_id;
+                return (
+                  <tr key={s.id}>
+                    <td><div style={{ fontWeight: 600, fontSize: 13 }}>{s.title}</div></td>
+                    <td><span style={{ fontSize: 13 }}>{s.athlete}</span></td>
+                    <td><span style={{ fontSize: 13, color: 'var(--mu2)' }}>{s.sponsor}</span></td>
+                    <td><span className="text-mono text-green" style={{ fontSize: 13 }}>R${(s.value || 0).toLocaleString()}</span></td>
+                    <td><span style={{ fontSize: 12, color: 'var(--mu2)' }}>{s.contrapartidas}</span></td>
+                    <td><span className={`badge ${statusColor[s.status] || 'badge-muted'}`}>{statusLabel[s.status] || s.status}</span></td>
+                    <td>{contactId && <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g)', borderColor: 'var(--g)' }} onClick={() => onOpenChat?.(contactId)}>💬 Contatar</button>}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -988,7 +996,7 @@ function SponsorshipsPage({ sponsorships, userId, onShowModal }) {
 
 // ─── MARKETPLACE PAGE ────────────────────────────────────────────────────────
 
-function MarketplacePage({ services, onShowModal, userRole, serviceRequests }) {
+function MarketplacePage({ services, onShowModal, userRole, serviceRequests, onOpenChat, currentUserId }) {
   const [catFilter, setCatFilter] = useState('all');
   const [tab, setTab] = useState('services');
   const cats = ['all', ...new Set(services.map(s => s.category).filter(Boolean))];
@@ -1069,7 +1077,13 @@ function MarketplacePage({ services, onShowModal, userRole, serviceRequests }) {
               </div>
               <div className="service-footer">
                 <div className="service-price">R$ {(s.price || 0).toLocaleString()}</div>
-                <button className="btn btn-primary btn-sm" onClick={() => onShowModal('bookService', s)}>Contratar</button>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {s.provider_id !== currentUserId && (
+                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g)', borderColor: 'var(--g)' }}
+                      onClick={() => onOpenChat?.(s.provider_id)}>💬</button>
+                  )}
+                  <button className="btn btn-primary btn-sm" onClick={() => onShowModal('bookService', s)}>Contratar</button>
+                </div>
               </div>
             </div>
           ))}
@@ -1140,7 +1154,7 @@ function CrowdfundingPage({ campaigns, onShowModal }) {
 
 // ─── FEED PAGE ───────────────────────────────────────────────────────────────
 
-function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, following, onFollow, onUnfollow, companies, sponsorships }) {
+function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, following, onFollow, onUnfollow, companies, sponsorships, onOpenChat }) {
   const posts = profile.feed_preference === 'sport' && profile.sport
     ? allPosts.filter(p => p.sport === profile.sport || p.author_id === profile.id)
     : allPosts;
@@ -1203,34 +1217,49 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
 
       {posts.length > 0 && <EmpresaDoEsporteWidget companies={companies || []} sponsorships={sponsorships || []} />}
 
-      {posts.map(post => (
-        <div key={post.id} className="feed-post">
-          <div className="post-header">
-            <Avatar src={post.avatar} size={44} radius={14} />
-            <div style={{ flex: 1 }}>
-              <div className="post-author">{post.author}</div>
-              <div className="post-meta">
-                {post.sport && <span className="badge badge-muted">{post.sport}</span>}
-                <span>{post.time}</span>
+      {posts.map(post => {
+        const isOwn = post.author_id === profile?.id;
+        const isEmpresa = post.authorRole === 'empresa';
+        return (
+          <div key={post.id} className="feed-post" style={isEmpresa ? { borderColor: 'var(--bl)', background: 'linear-gradient(135deg,var(--d1) 0%,rgba(59,130,246,0.06) 100%)' } : {}}>
+            {isEmpresa && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: 'var(--bl)', background: 'rgba(59,130,246,0.12)', borderRadius: 4, padding: '2px 8px', textTransform: 'uppercase' }}>🏢 Anúncio</span>
+                <span style={{ fontSize: 10, color: 'var(--mu)', marginLeft: 'auto' }}>Conteúdo patrocinado</span>
               </div>
-            </div>
-            {post.author_id !== profile?.id && (
-              following?.includes(post.author_id)
-                ? <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--g)', color: 'var(--g)', flexShrink: 0 }} onClick={() => onUnfollow(post.author_id)}>✓ Seguindo</button>
-                : <button className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }} onClick={() => onFollow(post.author_id)}>+ Seguir</button>
             )}
+            <div className="post-header">
+              <Avatar src={post.avatar} size={44} radius={14} />
+              <div style={{ flex: 1 }}>
+                <div className="post-author">{post.author}</div>
+                <div className="post-meta">
+                  {post.sport && <span className="badge badge-muted">{post.sport}</span>}
+                  <span>{post.time}</span>
+                </div>
+              </div>
+              {!isOwn && (
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g)', borderColor: 'var(--g)' }}
+                    onClick={() => onOpenChat?.(post.author_id)}>💬</button>
+                  {following?.includes(post.author_id)
+                    ? <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--g)', color: 'var(--g)' }} onClick={() => onUnfollow(post.author_id)}>✓ Seguindo</button>
+                    : <button className="btn btn-ghost btn-sm" onClick={() => onFollow(post.author_id)}>+ Seguir</button>
+                  }
+                </div>
+              )}
+            </div>
+            <div className="post-content">{post.content}</div>
+            <div className="post-actions">
+              <button className="post-action" onClick={() => handleToggle(post.id)}
+                style={{ color: liked.includes(post.id) ? 'var(--g)' : undefined }}>
+                {liked.includes(post.id) ? '💚' : '🤍'} {(post.likes || 0) + (liked.includes(post.id) ? 0 : 0)}
+              </button>
+              <CommentsSection postId={post.id} currentUserId={profile?.id} currentUserAvatar={profile?.avatar} />
+              <button className="post-action">↗ Compartilhar</button>
+            </div>
           </div>
-          <div className="post-content">{post.content}</div>
-          <div className="post-actions">
-            <button className="post-action" onClick={() => handleToggle(post.id)}
-              style={{ color: liked.includes(post.id) ? 'var(--g)' : undefined }}>
-              {liked.includes(post.id) ? '💚' : '🤍'} {(post.likes || 0) + (liked.includes(post.id) ? 0 : 0)}
-            </button>
-            <CommentsSection postId={post.id} currentUserId={profile?.id} currentUserAvatar={profile?.avatar} />
-            <button className="post-action">↗ Compartilhar</button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -1755,7 +1784,7 @@ function EmpresaDoEsporteWidget({ companies, sponsorships }) {
 
 // ─── MESSAGES PAGE ────────────────────────────────────────────────────────────
 
-function MessagesPage({ profile, allProfiles }) {
+function MessagesPage({ profile, allProfiles, initialContact, onClearInitial }) {
   const [conversations, setConversations] = useState([]);
   const [selected, setSelected] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -1766,6 +1795,13 @@ function MessagesPage({ profile, allProfiles }) {
   useEffect(() => {
     api.getConversations(profile.id).then(({ data }) => setConversations(data || []));
   }, [profile.id]);
+
+  useEffect(() => {
+    if (initialContact) {
+      setSelected(initialContact);
+      onClearInitial?.();
+    }
+  }, [initialContact]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (selected) {
@@ -2037,6 +2073,7 @@ export default function App() {
   const [serviceRequests, setServiceRequests] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [allProfiles, setAllProfiles] = useState([]);
+  const [chatWith, setChatWith] = useState(null);
 
   const loadedUserRef = useRef(null);
 
@@ -2243,6 +2280,13 @@ export default function App() {
   const showModal = useCallback((type, data) => setModal({ type, data }), []);
   const showToast = useCallback((msg) => setToast(msg), []);
 
+  const openChat = useCallback((userId) => {
+    const target = allProfiles.find(p => p.id === userId);
+    if (!target || userId === profile?.id) return;
+    setChatWith(target);
+    setPage('messages');
+  }, [allProfiles, profile?.id]);
+
   // ── Render ────────────────────────────────────────────────────────────────
   if (authLoading) {
     return (
@@ -2364,25 +2408,34 @@ export default function App() {
                 onToggleLike={handleToggleLike}
                 following={following} onFollow={handleFollow} onUnfollow={handleUnfollow}
                 companies={companies} sponsorships={sponsorships}
+                onOpenChat={openChat}
               />
             )}
             {page === 'messages' && (
-              <MessagesPage profile={profile} allProfiles={allProfiles} />
+              <MessagesPage
+                profile={profile} allProfiles={allProfiles}
+                initialContact={chatWith} onClearInitial={() => setChatWith(null)}
+              />
             )}
             {page === 'athletes' && (
               <AthletesPage
                 athletes={athletes} onShowModal={showModal}
                 following={following} onFollow={handleFollow} onUnfollow={handleUnfollow}
                 currentUserId={user.id} onViewProfile={setSelectedAthlete}
+                onOpenChat={openChat}
               />
             )}
             {page === 'sponsorships' && (
-              <SponsorshipsPage sponsorships={sponsorships} userId={user.id} onShowModal={showModal} />
+              <SponsorshipsPage
+                sponsorships={sponsorships} userId={user.id}
+                onShowModal={showModal} onOpenChat={openChat}
+              />
             )}
             {page === 'marketplace' && (
               <MarketplacePage
                 services={services} onShowModal={showModal}
                 userRole={profile.role} serviceRequests={serviceRequests}
+                onOpenChat={openChat} currentUserId={user.id}
               />
             )}
             {page === 'crowdfunding' && (

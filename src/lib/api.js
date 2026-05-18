@@ -9,6 +9,7 @@ function normalizePost(p) {
     author: p.author?.name || 'Anônimo',
     avatar: p.author?.avatar || '🏅',
     sport: p.author?.sport || '',
+    authorRole: p.author?.role || '',
     time: timeAgo(p.created_at),
   }
 }
@@ -117,7 +118,7 @@ export const api = {
   async getFeedPosts() {
     const { data, error } = await supabase
       .from('feed_posts')
-      .select('*, author:author_id(name, avatar, sport)')
+      .select('*, author:author_id(name, avatar, sport, role)')
       .order('created_at', { ascending: false })
       .limit(50)
     return { data: (data || []).map(normalizePost), error }
@@ -127,7 +128,7 @@ export const api = {
     const { data, error } = await supabase
       .from('feed_posts')
       .insert({ author_id: authorId, content, likes: 0 })
-      .select('*, author:author_id(name, avatar, sport)')
+      .select('*, author:author_id(name, avatar, sport, role)')
       .single()
     return { data: normalizePost(data), error }
   },
@@ -332,7 +333,7 @@ export const api = {
   async getPostsByAuthor(authorId) {
     const { data, error } = await supabase
       .from('feed_posts')
-      .select('*, author:author_id(name, avatar, sport)')
+      .select('*, author:author_id(name, avatar, sport, role)')
       .eq('author_id', authorId)
       .order('created_at', { ascending: false })
       .limit(20)
