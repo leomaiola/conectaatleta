@@ -1031,16 +1031,27 @@ function MarketplacePage({ services, onShowModal, userRole, serviceRequests, onO
           {serviceRequests.length === 0 ? (
             <div className="empty-state"><div className="empty-icon">🔍</div><div className="empty-title">Nenhuma solicitação ainda</div><div className="empty-text">Atletas ainda não fizeram pedidos de profissionais.</div></div>
           ) : serviceRequests.map(sr => (
-            <div key={sr.id} className="card mb-16">
+            <div key={sr.id} className="card mb-16" style={{ cursor: 'default' }}>
               <div className="card-body">
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 28 }}>{sr.athlete?.avatar || '🏃'}</span>
+                  <Avatar src={sr.athlete?.avatar} size={44} radius={12} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{sr.athlete?.name || 'Atleta'} busca <span style={{ color: 'var(--g)' }}>{sr.category}</span></div>
                     {sr.city && <div style={{ fontSize: 12, color: 'var(--mu2)', marginBottom: 6 }}>📍 {sr.city}{sr.state ? `, ${sr.state}` : ''}</div>}
                     {sr.description && <div style={{ fontSize: 13, color: 'var(--mu2)', lineHeight: 1.6 }}>{sr.description}</div>}
                   </div>
-                  <span className="badge badge-blue">{sr.category}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+                    <span className="badge badge-blue">{sr.category}</span>
+                    {sr.athlete_id && sr.athlete_id !== currentUserId && (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        style={{ whiteSpace: 'nowrap' }}
+                        onClick={() => onOpenChat?.(sr.athlete_id)}
+                      >
+                        💬 Entrar em contato
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1637,31 +1648,63 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
         <div className="athlete-profile-body">
           {athlete.results_bio && (
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Space Grotesk',sans-serif", marginBottom: 8 }}>🏆 Principais Conquistas</div>
               <div style={{ fontSize: 13, color: 'var(--mu2)', lineHeight: 1.7, background: 'var(--bk)', borderRadius: 10, padding: 14 }}>{athlete.results_bio}</div>
             </div>
           )}
-          {athleteResults.length > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <ResultsChart results={athleteResults} />
+
+          {/* ── Resultados dos últimos 12 meses ── */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Space Grotesk',sans-serif", marginBottom: 14 }}>
+              🏆 Resultados — Últimos 12 meses
             </div>
-          )}
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Space Grotesk',sans-serif", marginBottom: 16 }}>
-            📋 Conquistas e Publicações
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: 24, color: 'var(--mu)' }}>Carregando...</div>
+            ) : athleteResults.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--mu)', fontSize: 13 }}>
+                Nenhum resultado registrado ainda.
+              </div>
+            ) : (
+              <>
+                <ResultsChart results={athleteResults} />
+                <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {athleteResults.slice(0, 8).map(r => {
+                    const medalEmoji = { gold: '🥇', silver: '🥈', bronze: '🥉' }[r.medal] || '🎽';
+                    return (
+                      <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--bk)', borderRadius: 10, border: '1px solid var(--bd)' }}>
+                        <span style={{ fontSize: 22, flexShrink: 0 }}>{medalEmoji}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--tx)', marginBottom: 2 }}>{r.event_name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--mu2)' }}>
+                            {r.position && <span style={{ marginRight: 8 }}>🎯 {r.position}</span>}
+                            <span>📅 {new Date(r.event_date).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}</span>
+                          </div>
+                          {r.description && <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 2 }}>{r.description}</div>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: 40, color: 'var(--mu)' }}>Carregando...</div>
-          ) : posts.length === 0 ? (
-            <div className="empty-state" style={{ padding: '32px 0' }}>
-              <div className="empty-icon">📋</div>
-              <div className="empty-title">Nenhuma publicação ainda</div>
+
+          {/* ── Publicações ── */}
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Space Grotesk',sans-serif", marginBottom: 14 }}>
+              📋 Publicações
             </div>
-          ) : posts.map(post => (
-            <div key={post.id} className="feed-post">
-              <div className="post-content" style={{ marginBottom: 8 }}>{post.content}</div>
-              <div style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 600 }}>{post.time}</div>
-            </div>
-          ))}
+            {loading ? null : posts.length === 0 ? (
+              <div className="empty-state" style={{ padding: '24px 0' }}>
+                <div className="empty-icon">📋</div>
+                <div className="empty-title">Nenhuma publicação ainda</div>
+              </div>
+            ) : posts.map(post => (
+              <div key={post.id} className="feed-post">
+                <div className="post-content" style={{ marginBottom: 8 }}>{post.content}</div>
+                <div style={{ fontSize: 11, color: 'var(--mu)', fontWeight: 600 }}>{post.time}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
