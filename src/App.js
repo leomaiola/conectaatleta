@@ -1622,9 +1622,7 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
         <div className="athlete-profile-header">
           <button className="athlete-profile-close" onClick={onClose}>×</button>
           <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-            <div style={{ width: 72, height: 72, borderRadius: 18, background: 'var(--grad)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, flexShrink: 0, border: '3px solid rgba(255,255,255,0.2)' }}>
-              {athlete.avatar || '🏅'}
-            </div>
+            <Avatar src={athlete.avatar} size={72} radius={18} style={{ border: '3px solid rgba(255,255,255,0.2)', flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Space Grotesk',sans-serif", letterSpacing: -0.5, marginBottom: 4 }}>{athlete.name}</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
