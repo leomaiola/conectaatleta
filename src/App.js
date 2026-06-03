@@ -428,14 +428,16 @@ function initials(name) {
 
 function isUrl(v) { return v && (v.startsWith('http') || v.startsWith('blob')); }
 
-function Avatar({ src, size = 40, radius = '50%', fontSize, style = {}, className = '' }) {
+function Avatar({ src, name, size = 40, radius = '50%', fontSize, style = {}, className = '' }) {
   const fs = fontSize || Math.round(size * 0.45);
   if (isUrl(src)) {
-    return <img src={src} alt="" style={{ width: size, height: size, borderRadius: radius, objectFit: 'cover', flexShrink: 0, ...style }} className={className} />;
+    return <img src={src} alt={name || ''} style={{ width: size, height: size, borderRadius: radius, objectFit: 'cover', flexShrink: 0, ...style }} className={className} />;
   }
+  // If a name is provided and no photo/emoji, show initials
+  const display = isUrl(src) ? null : (src && !src.startsWith('http') ? src : null) || (name ? initials(name) : '🏅');
   return (
-    <div style={{ width: size, height: size, borderRadius: radius, background: 'var(--grad)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fs, flexShrink: 0, ...style }} className={className}>
-      {src || '🏅'}
+    <div style={{ width: size, height: size, borderRadius: radius, background: 'var(--grad)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fs, flexShrink: 0, color: '#fff', fontWeight: 800, fontFamily: "'Space Grotesk',sans-serif", ...style }} className={className}>
+      {display}
     </div>
   );
 }
@@ -777,7 +779,7 @@ function Dashboard({ profile, user, sponsorships, campaigns, posts, athletes, se
             {posts.slice(0, 3).map(post => (
               <div key={post.id} className="feed-post" style={{ marginBottom: 8 }}>
                 <div className="post-header">
-                  <Avatar src={post.avatar} size={38} radius={12} />
+                  <Avatar src={post.avatar} name={post.author} size={38} radius={12} />
                   <div>
                     <div className="post-author">{post.author}</div>
                     <div className="post-meta"><span className="badge badge-muted">{post.sport}</span><span>{post.time}</span></div>
@@ -886,7 +888,7 @@ function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, 
           {filtered.map(a => (
             <div key={a.id} className="athlete-card">
               <div className="athlete-avatar-wrap">
-                <Avatar src={a.avatar} size={56} radius={16} />
+                <Avatar src={a.avatar} name={a.name} size={56} radius={16} />
                 {a.sport && <div className="athlete-sport-badge">{a.sport}</div>}
               </div>
               <div className="athlete-name">{a.name}</div>
@@ -1034,7 +1036,7 @@ function MarketplacePage({ services, onShowModal, userRole, serviceRequests, onO
             <div key={sr.id} className="card mb-16" style={{ cursor: 'default' }}>
               <div className="card-body">
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <Avatar src={sr.athlete?.avatar} size={44} radius={12} />
+                  <Avatar src={sr.athlete?.avatar} name={sr.athlete?.name} size={44} radius={12} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{sr.athlete?.name || 'Atleta'} busca <span style={{ color: 'var(--g)' }}>{sr.category}</span></div>
                     {sr.city && <div style={{ fontSize: 12, color: 'var(--mu2)', marginBottom: 6 }}>📍 {sr.city}{sr.state ? `, ${sr.state}` : ''}</div>}
@@ -1240,7 +1242,7 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
               </div>
             )}
             <div className="post-header">
-              <Avatar src={post.avatar} size={44} radius={14} />
+              <Avatar src={post.avatar} name={post.author} size={44} radius={14} />
               <div style={{ flex: 1 }}>
                 <div className="post-author">{post.author}</div>
                 <div className="post-meta">
@@ -1893,7 +1895,7 @@ function MessagesPage({ profile, allProfiles, initialContact, onClearInitial }) 
           {conversations.map(c => (
             <div key={c.id} className={`conv-item ${selected?.id === c.otherId ? 'active' : ''}`}
               onClick={() => setSelected(c.other)}>
-              <div className="conv-avatar">{c.other?.avatar || '🏅'}</div>
+              <Avatar src={c.other?.avatar} name={c.other?.name} size={40} radius={12} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="conv-name">{c.other?.name}</div>
                 <div className="conv-preview">{c.content}</div>
@@ -1906,7 +1908,7 @@ function MessagesPage({ profile, allProfiles, initialContact, onClearInitial }) 
         {selected ? (
           <div className="chat-area">
             <div className="chat-header">
-              <div className="conv-avatar">{selected.avatar || '🏅'}</div>
+              <Avatar src={selected.avatar} name={selected.name} size={40} radius={12} />
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--tx)', fontFamily: "'Space Grotesk',sans-serif" }}>{selected.name}</div>
                 <div style={{ fontSize: 11, color: 'var(--mu2)' }}>{selected.role}</div>
@@ -2373,10 +2375,7 @@ export default function App() {
           </div>
 
           <div className="sidebar-user">
-            {isUrl(profile.avatar)
-              ? <img src={profile.avatar} alt="" style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
-              : <div className="user-avatar">{initials(profile.name)}</div>
-            }
+            <Avatar src={profile.avatar} name={profile.name} size={36} radius={10} />
             <div>
               <div className="user-name">{profile.name?.split(' ')[0] || 'Usuário'}</div>
               <div className="user-role">{ROLES.find(r => r.key === profile.role)?.label || 'Atleta'}</div>
