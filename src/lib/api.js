@@ -124,10 +124,10 @@ export const api = {
     return { data: (data || []).map(normalizePost), error }
   },
 
-  async createPost(authorId, content) {
+  async createPost(authorId, content, mediaUrl) {
     const { data, error } = await supabase
       .from('feed_posts')
-      .insert({ author_id: authorId, content, likes: 0 })
+      .insert({ author_id: authorId, content: content || '', likes: 0, media_url: mediaUrl || null })
       .select('*, author:author_id(name, avatar, sport, role)')
       .single()
     return { data: normalizePost(data), error }
@@ -445,7 +445,139 @@ export const api = {
     return count || 0
   },
 
+  // ─── ALL PROFILES ──────────────────────────────────────────────────────────
+
+  async getAllProfiles() {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, name, avatar, role, visibility, is_premium, is_admin, location, sport')
+      .order('name')
+    return { data: data || [], error }
+  },
+
+  // ─── CONNECTIONS / FRIENDSHIPS ─────────────────────────────────────────────
+
+  async getConnections(userId) {
+    const { data, error } = await supabase
+      .from('connections')
+      .select('*, requester:requester_id(id, name, avatar, role), receiver:receiver_id(id, name, avatar, role)')
+      .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`)
+      .eq('status', 'accepted')
+    const friends = (data || []).map(c =>
+      c.requester_id === userId ? c.receiver : c.requester
+    )
+    return { data: friends, error }
+  },
+
+  async getConnectionRequests(userId) {
+    const { data, error } = await supabase
+      .from('connections')
+      .select('*, requester:requester_id(id, name, avatar, role)')
+      .eq('receiver_id', userId)
+      .eq('status', 'pending')
+    return { data: data || [], error }
+  },
+
+  async getSentRequests(userId) {
+    const { data, error } = await supabase
+      .from('connections')
+      .select('receiver_id, status')
+      .eq('requester_id', userId)
+      .in('status', ['pending', 'accepted'])
+    const map = {}
+    ;(data || []).forEach(c => { map[c.receiver_id] = c.status })
+    return { data: map, error }
+  },
+
+  async sendConnectionRequest(requesterId, receiverId) {
+    const { data, error } = await supabase
+      .from('connections')
+      .insert({ requester_id: requesterId, receiver_id: receiverId })
+      .select()
+      .single()
+    if (!error) {
+      await supabase.from('notifications').insert({
+        user_id: receiverId,
+        type: 'connection_request',
+        title: 'Novo convite de conexão',
+        message: 'Você recebeu um convite para se conectar.',
+        data: { requester_id: requesterId, connection_id: data?.id },
+      })
+    }
+    return { data, error }
+  },
+
+  async respondConnectionRequest(connectionId, status) {
+    const { data, error } = await supabase
+      .from('connections')
+      .update({ status })
+      .eq('id', connectionId)
+      .select('*, requester:requester_id(id, name, avatar, role)')
+      .single()
+    return { data, error }
+  },
+
+  async removeConnection(userId, otherId) {
+    const { error } = await supabase
+      .from('connections')
+      .delete()
+      .or(
+        `and(requester_id.eq.${userId},receiver_id.eq.${otherId}),and(requester_id.eq.${otherId},receiver_id.eq.${userId})`
+      )
+    return { error }
+  },
+
+  // ─── PREMIUM / ADMIN ───────────────────────────────────────────────────────
+
+  async getPremiumPrice() {
+    const { data } = await supabase
+      .from('admin_settings')
+      .select('value')
+      .eq('key', 'premium_price')
+      .single()
+    return Number(data?.value || 99)
+  },
+
+  async setPremiumPrice(price) {
+    const { error } = await supabase
+      .from('admin_settings')
+      .upsert({ key: 'premium_price', value: String(price), updated_at: new Date().toISOString() })
+    return { error }
+  },
+
+  async setUserPremium(userId, isPremium) {
+    const expires = isPremium
+      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      : null
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ is_premium: isPremium, premium_expires_at: expires })
+      .eq('id', userId)
+      .select()
+      .single()
+    return { data, error }
+  },
+
+  async getPremiumUsers() {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, name, avatar, role, is_premium, premium_expires_at')
+      .order('name')
+    return { data: data || [], error }
+  },
+
   // ─── STORAGE / AVATAR ──────────────────────────────────────────────────────
+
+  async uploadPostMedia(userId, file) {
+    const ext = file.name.split('.').pop().toLowerCase()
+    const path = `posts/${userId}/${Date.now()}.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, file, { upsert: false, contentType: file.type })
+    if (uploadError) return { data: null, error: uploadError }
+    const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+    return { data: data.publicUrl, error: null }
+  },
 
   async uploadAvatar(userId, file) {
     const ext = file.name.split('.').pop().toLowerCase()

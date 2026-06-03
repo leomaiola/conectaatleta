@@ -442,6 +442,37 @@ function Avatar({ src, name, size = 40, radius = '50%', fontSize, style = {}, cl
   );
 }
 
+// ─── CONNECT BUTTON ─────────────────────────────────────────────────────────
+function ConnectButton({ targetId, currentUserId, friends, sentRequests, friendRequests, onSendRequest, onRespondRequest, onRemoveConnection, size = 'sm' }) {
+  if (targetId === currentUserId) return null;
+  const isFriend = friends?.includes(targetId);
+  const sentStatus = sentRequests?.[targetId];
+  const incomingReq = (friendRequests || []).find(r => r.requester_id === targetId);
+  const cls = `btn btn-${size}`;
+
+  if (isFriend) return (
+    <button className={`${cls} btn-ghost`} style={{ color: 'var(--g)', borderColor: 'var(--g)' }}
+      onClick={() => onRemoveConnection?.(targetId)} title="Clique para desfazer conexão">
+      ✓ Conectado
+    </button>
+  );
+  if (incomingReq) return (
+    <div style={{ display: 'flex', gap: 4 }}>
+      <button className={`${cls} btn-primary`} onClick={() => onRespondRequest?.(incomingReq.id, targetId, true)}>✓ Aceitar</button>
+      <button className={`${cls} btn-ghost`} onClick={() => onRespondRequest?.(incomingReq.id, targetId, false)}>✗</button>
+    </div>
+  );
+  if (sentStatus === 'pending') return (
+    <button className={`${cls} btn-ghost`} disabled style={{ opacity: 0.6 }}>⏳ Aguardando</button>
+  );
+  return (
+    <button className={`${cls} btn-ghost`} style={{ borderColor: 'var(--bl)', color: 'var(--bl)' }}
+      onClick={() => onSendRequest?.(targetId)}>
+      🤝 Conectar
+    </button>
+  );
+}
+
 function calcEngagement(profile, sponsorships) {
   const activeSpons = sponsorships.filter(s =>
     (s.athlete_id === profile.id || s.sponsor_id === profile.id) && s.status === 'active'
@@ -844,7 +875,7 @@ function Dashboard({ profile, user, sponsorships, campaigns, posts, athletes, se
 
 // ─── ATHLETES PAGE ───────────────────────────────────────────────────────────
 
-function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, currentUserId, onViewProfile, onOpenChat }) {
+function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, currentUserId, onViewProfile, onOpenChat, friends, sentRequests, friendRequests, onSendRequest, onRespondRequest, onRemoveConnection }) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const sports = ['all', ...new Set(athletes.map(a => a.sport).filter(Boolean))].slice(0, 8);
@@ -903,15 +934,14 @@ function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, 
                   <div className="metric-label">Engajamento</div>
                 </div>
               </div>
-              <div className="row mt-16" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <div className="row mt-16" style={{ gap: 6, flexWrap: 'wrap' }}>
                 <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => onViewProfile(a)}>Ver Perfil</button>
                 {currentUserId !== a.id && (
                   <>
                     <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g)', borderColor: 'var(--g)' }} onClick={() => onOpenChat?.(a.id)}>💬</button>
-                    {following?.includes(a.id)
-                      ? <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--g)', color: 'var(--g)' }} onClick={() => onUnfollow(a.id)}>✓</button>
-                      : <button className="btn btn-primary btn-sm" onClick={() => onFollow(a.id)}>+ Seguir</button>
-                    }
+                    <ConnectButton targetId={a.id} currentUserId={currentUserId}
+                      friends={friends} sentRequests={sentRequests} friendRequests={friendRequests}
+                      onSendRequest={onSendRequest} onRespondRequest={onRespondRequest} onRemoveConnection={onRemoveConnection} />
                   </>
                 )}
               </div>
@@ -1167,16 +1197,33 @@ function CrowdfundingPage({ campaigns, onShowModal }) {
 
 // ─── FEED PAGE ───────────────────────────────────────────────────────────────
 
-function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, following, onFollow, onUnfollow, companies, sponsorships, onOpenChat }) {
-  const posts = profile.feed_preference === 'sport' && profile.sport
+function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, following, onFollow, onUnfollow, companies, sponsorships, onOpenChat, friends, allProfiles }) {
+  const posts = (profile.feed_preference === 'sport' && profile.sport
     ? allPosts.filter(p => p.sport === profile.sport || p.author_id === profile.id)
-    : allPosts;
+    : allPosts
+  ).filter(p => {
+    if (p.author_id === profile.id) return true;
+    const authorProfile = allProfiles?.find(x => x.id === p.author_id);
+    if (authorProfile?.visibility === 'friends') return (friends || []).includes(p.author_id);
+    return true;
+  });
   const [liked, setLiked] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`liked_${profile?.id}`) || '[]'); }
     catch { return []; }
   });
   const [newPost, setNewPost] = useState('');
   const [posting, setPosting] = useState(false);
+  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaPreview, setMediaPreview] = useState(null);
+  const mediaInputRef = useRef(null);
+
+  const handleMediaSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { alert('Arquivo deve ter no máximo 10MB.'); return; }
+    setMediaFile(file);
+    setMediaPreview(URL.createObjectURL(file));
+  };
 
   const handleToggle = (id) => {
     const isLiked = liked.includes(id);
@@ -1188,10 +1235,17 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
   };
 
   const handlePublish = async () => {
-    if (!newPost.trim() || posting) return;
+    if ((!newPost.trim() && !mediaFile) || posting) return;
     setPosting(true);
-    await onCreatePost(newPost.trim());
+    let mediaUrl = null;
+    if (mediaFile) {
+      const { data: url } = await api.uploadPostMedia(profile.id, mediaFile);
+      mediaUrl = url;
+    }
+    await onCreatePost(newPost.trim(), mediaUrl);
     setNewPost('');
+    setMediaFile(null);
+    setMediaPreview(null);
     setPosting(false);
   };
 
@@ -1205,17 +1259,25 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
       <div className="card mb-16">
         <div className="card-body">
           <div style={{ display: 'flex', gap: 12 }}>
-            <Avatar src={profile.avatar} size={44} radius={14} />
+            <Avatar src={profile.avatar} name={profile.name} size={44} radius={14} />
             <div style={{ flex: 1 }}>
               <textarea className="form-textarea" style={{ marginBottom: 12 }}
                 placeholder="Compartilhe seu treino, conquista ou dica..."
                 value={newPost} onChange={e => setNewPost(e.target.value)} rows={3} />
+              {mediaPreview && (
+                <div style={{ position: 'relative', marginBottom: 10 }}>
+                  <img src={mediaPreview} alt="preview" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 10 }} />
+                  <button onClick={() => { setMediaFile(null); setMediaPreview(null); }}
+                    style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                </div>
+              )}
               <div className="row-between">
                 <div className="row" style={{ gap: 8 }}>
-                  <button className="btn btn-ghost btn-sm">📷 Foto</button>
-                  <button className="btn btn-ghost btn-sm">🎥 Vídeo</button>
+                  <input ref={mediaInputRef} type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={handleMediaSelect} />
+                  <button className="btn btn-ghost btn-sm" onClick={() => { mediaInputRef.current.accept='image/*'; mediaInputRef.current.click(); }}>📷 Foto</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { mediaInputRef.current.accept='video/*'; mediaInputRef.current.click(); }}>🎥 Vídeo</button>
                 </div>
-                <button className="btn btn-primary btn-sm" onClick={handlePublish} disabled={posting || !newPost.trim()}>
+                <button className="btn btn-primary btn-sm" onClick={handlePublish} disabled={posting || (!newPost.trim() && !mediaFile)}>
                   {posting ? 'Publicando...' : 'Publicar'}
                 </button>
               </div>
@@ -1261,13 +1323,18 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
                 </div>
               )}
             </div>
-            <div className="post-content">{post.content}</div>
+            {post.content ? <div className="post-content">{post.content}</div> : null}
+            {post.media_url && (
+              post.media_url.match(/\.(mp4|webm|mov)$/i)
+                ? <video src={post.media_url} controls style={{ width: '100%', maxHeight: 400, borderRadius: 12, marginBottom: 8 }} />
+                : <img src={post.media_url} alt="" style={{ width: '100%', maxHeight: 420, objectFit: 'cover', borderRadius: 12, marginBottom: 8 }} />
+            )}
             <div className="post-actions">
               <button className="post-action" onClick={() => handleToggle(post.id)}
                 style={{ color: liked.includes(post.id) ? 'var(--g)' : undefined }}>
                 {liked.includes(post.id) ? '💚' : '🤍'} {(post.likes || 0) + (liked.includes(post.id) ? 0 : 0)}
               </button>
-              <CommentsSection postId={post.id} currentUserId={profile?.id} currentUserAvatar={profile?.avatar} />
+              <CommentsSection postId={post.id} currentUserId={profile?.id} currentUserAvatar={profile?.avatar} currentUserName={profile?.name} />
               <button className="post-action">↗ Compartilhar</button>
             </div>
           </div>
@@ -1279,7 +1346,7 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
 
 // ─── PROFILE PAGE ────────────────────────────────────────────────────────────
 
-function ProfilePage({ profile, onUpdateProfile }) {
+function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, onRespondRequest }) {
   const [form, setForm] = useState({
     name: profile.name || '',
     bio: profile.bio || '',
@@ -1291,6 +1358,7 @@ function ProfilePage({ profile, onUpdateProfile }) {
     avatar: profile.avatar || '🏅',
     feed_preference: profile.feed_preference || 'all',
     results_bio: profile.results_bio || '',
+    visibility: profile.visibility || 'public',
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -1336,7 +1404,11 @@ function ProfilePage({ profile, onUpdateProfile }) {
 
   const handleSave = async () => {
     setSaving(true);
-    await onUpdateProfile(form);
+    // Only send visibility if the column already exists in the DB
+    const updates = { ...form };
+    if (!('visibility' in profile)) delete updates.visibility;
+    if (!('is_premium' in profile)) delete updates.is_premium;
+    await onUpdateProfile(updates);
     setSaving(false);
   };
 
@@ -1496,6 +1568,84 @@ function ProfilePage({ profile, onUpdateProfile }) {
         </div>
       </div>
 
+      {/* ── Privacidade ── */}
+      <div className="card mt-16">
+        <div className="card-header">
+          <div className="card-title">🔒 Privacidade e Visibilidade</div>
+          {profile.is_premium && <span className="badge badge-yellow">⭐ Premium</span>}
+        </div>
+        <div className="card-body">
+          <p style={{ fontSize: 13, color: 'var(--mu2)', lineHeight: 1.6, marginBottom: 16 }}>
+            Controle quem pode ver seu perfil e enviar mensagens para você.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { value: 'public', label: '🌎 Perfil Público', desc: 'Qualquer pessoa pode ver seu perfil e enviar mensagens' },
+              { value: 'friends', label: '🤝 Apenas Conexões', desc: 'Somente suas conexões aceitas e usuários premium podem enviar mensagens' },
+            ].map(opt => (
+              <label key={opt.value} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: 14, borderRadius: 12, border: `1.5px solid ${form.visibility === opt.value ? 'var(--g)' : 'var(--bd)'}`, background: form.visibility === opt.value ? 'linear-gradient(135deg,#ECFDF5,#EFF6FF)' : 'var(--bk)', cursor: 'pointer', transition: 'all 0.15s' }}>
+                <input type="radio" name="visibility" value={opt.value} checked={form.visibility === opt.value} onChange={() => setForm(f => ({ ...f, visibility: opt.value }))} style={{ marginTop: 2 }} />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{opt.label}</div>
+                  <div style={{ fontSize: 12, color: 'var(--mu2)' }}>{opt.desc}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+          <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={handleSave} disabled={saving}>
+            {saving ? 'Salvando...' : 'Salvar Privacidade'}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Convites de Conexão pendentes ── */}
+      {(friendRequests || []).length > 0 && (
+        <div className="card mt-16">
+          <div className="card-header">
+            <div className="card-title">🤝 Convites Pendentes</div>
+            <span className="badge badge-green">{friendRequests.length}</span>
+          </div>
+          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {friendRequests.map(req => (
+              <div key={req.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: 'var(--bk)', borderRadius: 10, border: '1px solid var(--bd)' }}>
+                <Avatar src={req.requester?.avatar} name={req.requester?.name} size={40} radius={10} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>{req.requester?.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--mu2)' }}>{req.requester?.role}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn-primary btn-sm" onClick={() => onRespondRequest(req.id, req.requester_id, true)}>✓ Aceitar</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => onRespondRequest(req.id, req.requester_id, false)}>✗ Recusar</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Premium (empresas e profissionais) ── */}
+      {(profile.role === 'empresa' || profile.role === 'profissional') && !profile.is_premium && (
+        <div className="card mt-16" style={{ border: '1.5px solid var(--yl)', background: 'linear-gradient(135deg,var(--d1),rgba(245,158,11,0.06))' }}>
+          <div className="card-header">
+            <div className="card-title">⭐ Seja Premium</div>
+            <span className="badge badge-yellow">R$ {premiumPrice}/mês</span>
+          </div>
+          <div className="card-body">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+              {['📢 Anunciar produtos e serviços no feed', '💬 Mensagens para qualquer atleta', '🚀 Destaque nos resultados de busca', '📊 Relatórios de engajamento avançados'].map(b => (
+                <div key={b} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'var(--mu2)' }}>
+                  <span style={{ color: '#F59E0B', marginTop: 1 }}>✓</span> {b}
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-primary" style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', borderColor: '#F59E0B' }}>
+              ⭐ Assinar Premium — R$ {premiumPrice}/mês
+            </button>
+            <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 8 }}>Pagamento via PIX ou cartão. Cancele quando quiser.</div>
+          </div>
+        </div>
+      )}
+
       {profile.role === 'atleta' && (
         <div className="card mt-16">
           <div className="card-header"><div className="card-title">📅 Histórico de Resultados</div><span className="badge badge-green">{results.length} eventos</span></div>
@@ -1557,9 +1707,9 @@ function ProfilePage({ profile, onUpdateProfile }) {
 
 // ─── NOTIFICATIONS PANEL ─────────────────────────────────────────────────────
 
-function NotificationsPanel({ notifications, onClose, onMarkRead }) {
+function NotificationsPanel({ notifications, onClose, onMarkRead, friendRequests, onRespondRequest }) {
   const unread = notifications.filter(n => !n.read).length;
-  useEffect(() => { if (unread > 0) onMarkRead(); }, []);
+  useEffect(() => { if (unread > 0) onMarkRead(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function timeAgoShort(d) {
     const diff = Math.max(0, Date.now() - new Date(d).getTime());
@@ -1571,16 +1721,33 @@ function NotificationsPanel({ notifications, onClose, onMarkRead }) {
     return `${Math.floor(h / 24)}d`;
   }
 
-  const typeIcon = { service_request: '🔔', info: 'ℹ️', follow: '👤' };
+  const typeIcon = { service_request: '🔔', info: 'ℹ️', follow: '👤', connection_request: '🤝' };
+  const total = (friendRequests?.length || 0) + unread;
 
   return (
     <div className="notif-panel">
       <div className="notif-panel-header">
-        <div className="notif-panel-title">Notificações {unread > 0 && <span className="badge badge-red" style={{ marginLeft: 8 }}>{unread} novas</span>}</div>
+        <div className="notif-panel-title">Notificações {total > 0 && <span className="badge badge-red" style={{ marginLeft: 8 }}>{total} novas</span>}</div>
         <button className="modal-close" onClick={onClose}>×</button>
       </div>
       <div className="notif-list">
-        {notifications.length === 0 ? (
+        {/* Pending connection requests */}
+        {(friendRequests || []).map(req => (
+          <div key={req.id} className="notif-item unread" style={{ background: 'rgba(16,185,129,0.06)', borderLeft: '3px solid var(--g)' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <Avatar src={req.requester?.avatar} name={req.requester?.name} size={36} radius={10} />
+              <div style={{ flex: 1 }}>
+                <div className="notif-item-title">🤝 Convite de conexão</div>
+                <div className="notif-item-msg"><strong>{req.requester?.name}</strong> quer se conectar com você</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <button className="btn btn-primary btn-sm" onClick={() => onRespondRequest(req.id, req.requester_id, true)}>✓ Aceitar</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => onRespondRequest(req.id, req.requester_id, false)}>✗ Recusar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+        {notifications.length === 0 && (friendRequests?.length || 0) === 0 ? (
           <div className="notif-empty">Nenhuma notificação ainda 🔕</div>
         ) : notifications.map(n => (
           <div key={n.id} className={`notif-item ${!n.read ? 'unread' : ''}`}>
@@ -1601,7 +1768,7 @@ function NotificationsPanel({ notifications, onClose, onMarkRead }) {
 
 // ─── ATHLETE PROFILE VIEW ─────────────────────────────────────────────────────
 
-function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentUserId, onClose }) {
+function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentUserId, onClose, onOpenChat, friends, sentRequests, friendRequests, onSendRequest, onRespondRequest, onRemoveConnection }) {
   const [posts, setPosts] = useState([]);
   const [athleteResults, setAthleteResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1637,9 +1804,17 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
                 <div><div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Space Grotesk',sans-serif" }}>{athlete.engagement || 0}%</div><div style={{ fontSize: 10, color: '#64748B', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>Engajamento</div></div>
               </div>
               {currentUserId !== athlete.id && (
-                isFollowing
-                  ? <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--g4)', color: 'var(--g4)', background: 'rgba(110,231,183,0.1)' }} onClick={() => onUnfollow(athlete.id)}>✓ Seguindo</button>
-                  : <button className="btn btn-primary btn-sm" onClick={() => onFollow(athlete.id)}>+ Seguir</button>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g4)', borderColor: 'var(--g4)' }}
+                    onClick={() => onOpenChat?.(athlete.id)}>💬 Mensagem</button>
+                  {isFollowing
+                    ? <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--g4)', color: 'var(--g4)', background: 'rgba(110,231,183,0.1)' }} onClick={() => onUnfollow(athlete.id)}>✓ Seguindo</button>
+                    : <button className="btn btn-primary btn-sm" onClick={() => onFollow(athlete.id)}>+ Seguir</button>
+                  }
+                  <ConnectButton targetId={athlete.id} currentUserId={currentUserId}
+                    friends={friends} sentRequests={sentRequests} friendRequests={friendRequests}
+                    onSendRequest={onSendRequest} onRespondRequest={onRespondRequest} onRemoveConnection={onRemoveConnection} />
+                </div>
               )}
             </div>
           </div>
@@ -1744,7 +1919,7 @@ function ResultsChart({ results }) {
 
 // ─── COMMENTS SECTION ────────────────────────────────────────────────────────
 
-function CommentsSection({ postId, currentUserId, currentUserAvatar }) {
+function CommentsSection({ postId, currentUserId, currentUserAvatar, currentUserName }) {
   const [comments, setComments] = useState([]);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
@@ -1770,15 +1945,18 @@ function CommentsSection({ postId, currentUserId, currentUserAvatar }) {
   };
 
   return (
-    <div>
+    <div onClick={e => e.stopPropagation()}>
       <button className="post-action" onClick={toggle}>
-        💬 {comments.length > 0 ? comments.length : ''} Comentar
+        💬 {comments.length > 0 ? `${comments.length} ` : ''}Comentar
       </button>
       {open && (
         <div className="comments-section">
+          {comments.length === 0 && !loading && (
+            <div style={{ fontSize: 12, color: 'var(--mu)', textAlign: 'center', padding: '8px 0' }}>Nenhum comentário ainda. Seja o primeiro!</div>
+          )}
           {comments.map(c => (
             <div key={c.id} className="comment-item">
-              <div className="comment-avatar">{c.author?.avatar || '🏅'}</div>
+              <Avatar src={c.author?.avatar} name={c.author?.name} size={30} radius={8} />
               <div className="comment-bubble">
                 <div className="comment-author">{c.author?.name || 'Usuário'}</div>
                 <div className="comment-text">{c.content}</div>
@@ -1786,12 +1964,14 @@ function CommentsSection({ postId, currentUserId, currentUserAvatar }) {
             </div>
           ))}
           <div className="comment-input-row">
-            <div className="comment-avatar">{currentUserAvatar || '🏅'}</div>
-            <input className="form-input" style={{ flex: 1, padding: '8px 12px', borderRadius: 10 }}
+            <Avatar src={currentUserAvatar} name={currentUserName} size={30} radius={8} />
+            <input className="form-input" style={{ flex: 1, padding: '8px 12px', borderRadius: 10, fontSize: 13 }}
               placeholder="Escreva um comentário..."
               value={text} onChange={e => setText(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && submit()} />
-            <button className="btn btn-primary btn-sm" onClick={submit} disabled={loading || !text.trim()}>↑</button>
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }} />
+            <button className="btn btn-primary btn-sm" onClick={submit} disabled={loading || !text.trim()}>
+              {loading ? '...' : '↑'}
+            </button>
           </div>
         </div>
       )}
@@ -2093,6 +2273,104 @@ function ModalContent({ type, data, athletes, onClose, onToast, onSave }) {
   return null;
 }
 
+// ─── ADMIN PAGE ──────────────────────────────────────────────────────────────
+
+function AdminPage({ premiumPrice, onSetPremiumPrice, onSetPremium }) {
+  const [users, setUsers] = useState([]);
+  const [newPrice, setNewPrice] = useState(String(premiumPrice));
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    api.getPremiumUsers().then(({ data }) => { setUsers(data || []); setLoading(false); });
+  }, []);
+
+  const filtered = users.filter(u => (u.name || '').toLowerCase().includes(search.toLowerCase()));
+
+  const toggle = async (u) => {
+    const next = !u.is_premium;
+    setUsers(prev => prev.map(x => x.id === u.id ? { ...x, is_premium: next } : x));
+    await onSetPremium(u.id, next);
+  };
+
+  return (
+    <div>
+      <div className="row-between mb-24">
+        <div>
+          <div className="section-title">⚙️ Administração</div>
+          <div className="text-muted text-sm">Gerencie usuários premium e configurações</div>
+        </div>
+      </div>
+
+      <div className="card mb-24">
+        <div className="card-header"><div className="card-title">💰 Preço do Plano Premium</div></div>
+        <div className="card-body">
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', maxWidth: 320 }}>
+            <div style={{ fontSize: 13, color: 'var(--mu2)', flexShrink: 0 }}>R$</div>
+            <input className="form-input" type="number" value={newPrice}
+              onChange={e => setNewPrice(e.target.value)}
+              style={{ width: 120 }} />
+            <div style={{ fontSize: 13, color: 'var(--mu2)', flexShrink: 0 }}>/mês</div>
+            <button className="btn btn-primary btn-sm" onClick={() => onSetPremiumPrice(Number(newPrice))}>Salvar</button>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--mu)', marginTop: 8 }}>
+            Este valor é exibido para empresas e profissionais na tela de perfil.
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">⭐ Gerenciar Premium</div>
+          <span className="badge badge-yellow">{users.filter(u => u.is_premium).length} premium</span>
+        </div>
+        <div className="card-body" style={{ paddingBottom: 0 }}>
+          <input className="form-input" placeholder="Buscar usuário..." value={search}
+            onChange={e => setSearch(e.target.value)} style={{ marginBottom: 16 }} />
+        </div>
+        {loading ? (
+          <div style={{ padding: 24, textAlign: 'center', color: 'var(--mu)' }}>Carregando...</div>
+        ) : (
+          <table className="table">
+            <thead><tr><th>Usuário</th><th>Perfil</th><th>Status</th><th>Expira em</th><th>Ação</th></tr></thead>
+            <tbody>
+              {filtered.map(u => (
+                <tr key={u.id}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Avatar src={u.avatar} name={u.name} size={32} radius={8} />
+                      <span style={{ fontWeight: 600, fontSize: 13 }}>{u.name}</span>
+                    </div>
+                  </td>
+                  <td><span className="badge badge-muted">{u.role}</span></td>
+                  <td>
+                    {u.is_premium
+                      ? <span className="badge badge-yellow">⭐ Premium</span>
+                      : <span className="badge badge-muted">Gratuito</span>}
+                  </td>
+                  <td>
+                    <span style={{ fontSize: 12, color: 'var(--mu2)' }}>
+                      {u.premium_expires_at ? new Date(u.premium_expires_at).toLocaleDateString('pt-BR') : '—'}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      className={`btn btn-sm ${u.is_premium ? 'btn-ghost' : 'btn-primary'}`}
+                      style={u.is_premium ? { color: 'var(--rd)', borderColor: 'var(--rd2)' } : { background: 'linear-gradient(135deg,#F59E0B,#D97706)', borderColor: '#F59E0B' }}
+                      onClick={() => toggle(u)}>
+                      {u.is_premium ? 'Remover Premium' : '⭐ Ativar Premium'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN APP ────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -2117,6 +2395,10 @@ export default function App() {
   const [companies, setCompanies] = useState([]);
   const [allProfiles, setAllProfiles] = useState([]);
   const [chatWith, setChatWith] = useState(null);
+  const [friends, setFriends] = useState([]);           // ids of accepted connections
+  const [friendRequests, setFriendRequests] = useState([]); // incoming pending {id, requester_id, requester}
+  const [sentRequests, setSentRequests] = useState({});  // {userId: 'pending'|'accepted'}
+  const [premiumPrice, setPremiumPrice] = useState(99);
 
   const loadedUserRef = useRef(null);
 
@@ -2151,7 +2433,7 @@ export default function App() {
   }, [user]);
 
   async function loadAllData() {
-    const [p, a, s, c, sv, fw, notif, sr, comp] = await Promise.all([
+    const [p, a, s, c, sv, fw, notif, sr, comp, ap, conn, reqs, sent, price] = await Promise.all([
       api.getFeedPosts(),
       api.getAthletes(),
       api.getSponsorships(),
@@ -2161,6 +2443,11 @@ export default function App() {
       api.getNotifications(user.id),
       api.getServiceRequests(),
       api.getCompanies(),
+      api.getAllProfiles(),
+      api.getConnections(user.id),
+      api.getConnectionRequests(user.id),
+      api.getSentRequests(user.id),
+      api.getPremiumPrice(),
     ]);
     setPosts(p.data || []);
     setAthletes(a.data || []);
@@ -2171,11 +2458,17 @@ export default function App() {
     setNotifications(notif.data || []);
     setServiceRequests(sr.data || []);
     setCompanies(comp.data || []);
-    setAllProfiles([...(a.data || []), ...(comp.data || [])]);
+    setAllProfiles(ap.data || []);
+    setFriends((conn.data || []).map(f => f.id));
+    setFriendRequests(reqs.data || []);
+    setSentRequests(sent.data || {});
+    setPremiumPrice(price || 99);
   }
 
   function clearData() {
-    setPosts([]); setAthletes([]); setSponsorships([]); setCampaigns([]); setServices([]); setFollowing([]); setNotifications([]); setServiceRequests([]); setCompanies([]); setAllProfiles([]);
+    setPosts([]); setAthletes([]); setSponsorships([]); setCampaigns([]); setServices([]);
+    setFollowing([]); setNotifications([]); setServiceRequests([]); setCompanies([]);
+    setAllProfiles([]); setFriends([]); setFriendRequests([]); setSentRequests({});
   }
 
   // ── Auth handlers ─────────────────────────────────────────────────────────
@@ -2183,9 +2476,9 @@ export default function App() {
   const handleLogout = async () => { await api.signOut(); };
 
   // ── Data mutation handlers ─────────────────────────────────────────────────
-  const handleCreatePost = async (content) => {
+  const handleCreatePost = async (content, mediaUrl) => {
     if (!user) return;
-    const { data } = await api.createPost(user.id, content);
+    const { data } = await api.createPost(user.id, content, mediaUrl);
     if (data) setPosts(prev => [data, ...prev]);
   };
 
@@ -2326,9 +2619,49 @@ export default function App() {
   const openChat = useCallback((userId) => {
     const target = allProfiles.find(p => p.id === userId);
     if (!target || userId === profile?.id) return;
+    if (target.visibility === 'friends') {
+      const isFriend = friends.includes(userId);
+      const amIPremium = profile?.is_premium;
+      if (!isFriend && !amIPremium) {
+        showToast('🔒 Este usuário só aceita mensagens de conexões ou usuários premium.');
+        return;
+      }
+    }
     setChatWith(target);
     setPage('messages');
-  }, [allProfiles, profile?.id]);
+  }, [allProfiles, profile?.id, friends]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSendRequest = useCallback(async (targetId) => {
+    if (!user) return;
+    setSentRequests(prev => ({ ...prev, [targetId]: 'pending' }));
+    const { error } = await api.sendConnectionRequest(user.id, targetId);
+    if (error) {
+      setSentRequests(prev => { const n = { ...prev }; delete n[targetId]; return n; });
+      showToast('❌ Erro ao enviar convite.');
+    } else {
+      showToast('✅ Convite enviado!');
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRespondRequest = useCallback(async (connectionId, requesterId, accept) => {
+    const status = accept ? 'accepted' : 'rejected';
+    const { data } = await api.respondConnectionRequest(connectionId, status);
+    setFriendRequests(prev => prev.filter(r => r.id !== connectionId));
+    if (accept && data?.requester) {
+      setFriends(prev => [...prev, requesterId]);
+      setSentRequests(prev => ({ ...prev, [requesterId]: 'accepted' }));
+      showToast(`✅ Você e ${data.requester.name} agora são conexões!`);
+    } else {
+      showToast('Convite recusado.');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRemoveConnection = useCallback(async (otherId) => {
+    if (!user) return;
+    setFriends(prev => prev.filter(id => id !== otherId));
+    setSentRequests(prev => { const n = { ...prev }; delete n[otherId]; return n; });
+    await api.removeConnection(user.id, otherId);
+  }, [user]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   if (authLoading) {
@@ -2375,11 +2708,17 @@ export default function App() {
           </div>
 
           <div className="sidebar-user">
-            <Avatar src={profile.avatar} name={profile.name} size={36} radius={10} />
-            <div>
+            <div style={{ position: 'relative' }}>
+              <Avatar src={profile.avatar} name={profile.name} size={36} radius={10} />
+              {profile.is_premium && <span style={{ position: 'absolute', bottom: -4, right: -4, fontSize: 11, background: '#F59E0B', borderRadius: 6, padding: '0 4px', fontWeight: 800, color: '#fff', lineHeight: '16px' }}>★</span>}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div className="user-name">{profile.name?.split(' ')[0] || 'Usuário'}</div>
               <div className="user-role">{ROLES.find(r => r.key === profile.role)?.label || 'Atleta'}</div>
             </div>
+            {friendRequests.length > 0 && (
+              <div style={{ background: 'var(--g)', color: '#fff', borderRadius: 10, fontSize: 10, fontWeight: 800, padding: '2px 6px', flexShrink: 0 }}>{friendRequests.length}</div>
+            )}
           </div>
 
           <nav className="sidebar-nav">
@@ -2398,6 +2737,12 @@ export default function App() {
           </nav>
 
           <div className="sidebar-bottom">
+            {profile?.is_admin && (
+              <button className={`nav-item ${page === 'admin' ? 'active' : ''}`} onClick={() => setPage('admin')}>
+                <span className="nav-icon">⚙️</span>
+                Administração
+              </button>
+            )}
             <button className="nav-item" onClick={handleLogout}>
               <span className="nav-icon">⎋</span>
               Sair
@@ -2415,8 +2760,8 @@ export default function App() {
             </div>
             <div className="topbar-notif-wrap">
               <button className="topbar-btn" title="Notificações" onClick={handleOpenNotifications}>🔔
-                {notifications.filter(n => !n.read).length > 0 && (
-                  <span className="notif-count">{notifications.filter(n => !n.read).length}</span>
+                {(notifications.filter(n => !n.read).length + friendRequests.length) > 0 && (
+                  <span className="notif-count">{notifications.filter(n => !n.read).length + friendRequests.length}</span>
                 )}
               </button>
               {notifOpen && (
@@ -2427,6 +2772,8 @@ export default function App() {
                     api.markNotificationsRead(user.id);
                     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
                   }}
+                  friendRequests={friendRequests}
+                  onRespondRequest={handleRespondRequest}
                 />
               )}
             </div>
@@ -2449,6 +2796,7 @@ export default function App() {
                 following={following} onFollow={handleFollow} onUnfollow={handleUnfollow}
                 companies={companies} sponsorships={sponsorships}
                 onOpenChat={openChat}
+                friends={friends} allProfiles={allProfiles}
               />
             )}
             {page === 'messages' && (
@@ -2463,6 +2811,9 @@ export default function App() {
                 following={following} onFollow={handleFollow} onUnfollow={handleUnfollow}
                 currentUserId={user.id} onViewProfile={setSelectedAthlete}
                 onOpenChat={openChat}
+                friends={friends} sentRequests={sentRequests} friendRequests={friendRequests}
+                onSendRequest={handleSendRequest} onRespondRequest={handleRespondRequest}
+                onRemoveConnection={handleRemoveConnection}
               />
             )}
             {page === 'sponsorships' && (
@@ -2482,7 +2833,20 @@ export default function App() {
               <CrowdfundingPage campaigns={campaigns} onShowModal={showModal} />
             )}
             {page === 'profile' && (
-              <ProfilePage profile={profile} onUpdateProfile={handleUpdateProfile} />
+              <ProfilePage
+                profile={profile} onUpdateProfile={handleUpdateProfile}
+                premiumPrice={premiumPrice}
+                friendRequests={friendRequests}
+                onRespondRequest={handleRespondRequest}
+                isAdmin={profile?.is_admin}
+              />
+            )}
+            {page === 'admin' && profile?.is_admin && (
+              <AdminPage
+                premiumPrice={premiumPrice}
+                onSetPremiumPrice={async (p) => { await api.setPremiumPrice(p); setPremiumPrice(p); showToast('✅ Preço atualizado!'); }}
+                onSetPremium={async (uid, val) => { const { data } = await api.setUserPremium(uid, val); if (data) showToast(val ? '⭐ Premium ativado!' : 'Premium removido.'); }}
+              />
             )}
           </div>
         </main>
@@ -2502,11 +2866,12 @@ export default function App() {
       {selectedAthlete && (
         <AthleteProfileView
           athlete={selectedAthlete}
-          following={following}
-          onFollow={handleFollow}
-          onUnfollow={handleUnfollow}
-          currentUserId={user.id}
-          onClose={() => setSelectedAthlete(null)}
+          following={following} onFollow={handleFollow} onUnfollow={handleUnfollow}
+          currentUserId={user.id} onClose={() => setSelectedAthlete(null)}
+          onOpenChat={openChat}
+          friends={friends} sentRequests={sentRequests} friendRequests={friendRequests}
+          onSendRequest={handleSendRequest} onRespondRequest={handleRespondRequest}
+          onRemoveConnection={handleRemoveConnection}
         />
       )}
 
