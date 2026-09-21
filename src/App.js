@@ -1484,7 +1484,10 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
         <div className="profile-info">
           <div className="profile-name">{profile.name}</div>
           <div className="profile-meta-row">
-            <span className="badge badge-green">{ROLES.find(r => r.key === profile.role)?.icon} {ROLES.find(r => r.key === profile.role)?.label}</span>
+            <span className="badge badge-green">
+              {(() => { const RIcon = ROLES.find(r => r.key === profile.role)?.icon || Trophy; return <RIcon size={12} />; })()}
+              {' '}{ROLES.find(r => r.key === profile.role)?.label}
+            </span>
             {profile.sport && <span className="badge badge-muted">{profile.sport}</span>}
             {profile.location && <span style={{ fontSize: 12, color: 'var(--mu2)' }}>📍 {profile.location}</span>}
           </div>
