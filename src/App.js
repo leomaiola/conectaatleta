@@ -2,6 +2,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./lib/supabase";
 import { api } from "./lib/api";
+import {
+  LayoutGrid, Rss, MessageCircle, PersonStanding, Handshake, Stethoscope, PiggyBank,
+  User, Settings, LogOut, Search, Bell, Users, Flame, Trophy, Wallet, Star, Package,
+  Megaphone, Building2, Shield, Camera, HeartHandshake, Dumbbell, X,
+  CheckCircle2, Clock, Target, Lock, Zap, Link2, FileText, CalendarDays, AlertTriangle,
+} from "lucide-react";
+
+const NAV_ICONS = {
+  dashboard: LayoutGrid, feed: Rss, messages: MessageCircle, athletes: PersonStanding,
+  sponsorships: Handshake, marketplace: Stethoscope, crowdfunding: PiggyBank, profile: User,
+};
 
 // ─── MODALIDADES ─────────────────────────────────────────────────────────────
 const MODALIDADES = [
@@ -28,12 +39,12 @@ const MODALIDADES = [
 ];
 
 const ROLES = [
-  { key: "atleta",       icon: "🏃", label: "Atleta" },
-  { key: "empresa",      icon: "🏢", label: "Empresa" },
-  { key: "clube",        icon: "⚽", label: "Clube" },
-  { key: "profissional", icon: "🩺", label: "Profissional" },
-  { key: "midia",        icon: "📸", label: "Mídia" },
-  { key: "apoiador",     icon: "💚", label: "Apoiador" },
+  { key: "atleta",       icon: PersonStanding, label: "Atleta" },
+  { key: "empresa",      icon: Building2, label: "Empresa" },
+  { key: "clube",        icon: Shield, label: "Clube" },
+  { key: "profissional", icon: Stethoscope, label: "Profissional" },
+  { key: "midia",        icon: Camera, label: "Mídia" },
+  { key: "apoiador",     icon: HeartHandshake, label: "Apoiador" },
 ];
 
 const NAV_BY_ROLE = {
@@ -89,7 +100,7 @@ const NAV_BY_ROLE = {
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@500;600;700;800;900&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -124,7 +135,7 @@ const styles = `
   .logo-wrap { display: flex; align-items: center; gap: 10px; }
   .logo-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--grad); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(16,185,129,0.4); }
   .logo-icon-inner { width: 14px; height: 14px; border-radius: 50%; background: #fff; }
-  .logo-text { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: 'Space Grotesk', sans-serif; }
+  .logo-text { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: 'Outfit', sans-serif; }
   .logo-text span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .logo-tag { font-size: 9px; color: var(--sb3); letter-spacing: 1.2px; text-transform: uppercase; margin-top: 3px; font-weight: 600; }
 
@@ -138,14 +149,14 @@ const styles = `
   .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: all 0.15s; font-size: 13px; font-weight: 500; color: #94A3B8; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left; }
   .nav-item:hover { background: var(--sb2); color: #CBD5E1; }
   .nav-item.active { background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(59,130,246,0.12)); color: var(--g4); font-weight: 600; border: 1px solid rgba(16,185,129,0.2); }
-  .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+  .nav-item .nav-icon { width: 20px; height: 17px; flex-shrink: 0; }
   .nav-item .nav-badge { margin-left: auto; background: var(--grad); color: #fff; font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 100px; }
   .sidebar-bottom { padding: 12px; border-top: 1px solid var(--sb2); flex-shrink: 0; }
 
   /* ── TOPBAR ── */
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .topbar { height: 60px; flex-shrink: 0; background: var(--d1); border-bottom: 1px solid var(--bd); display: flex; align-items: center; padding: 0 28px; gap: 12px; }
-  .topbar-title { font-size: 16px; font-weight: 700; color: var(--tx); flex: 1; letter-spacing: -0.3px; font-family: 'Space Grotesk', sans-serif; }
+  .topbar-title { font-size: 16px; font-weight: 700; color: var(--tx); flex: 1; letter-spacing: -0.3px; font-family: 'Outfit', sans-serif; }
   .topbar-search { display: flex; align-items: center; gap: 8px; background: var(--bk); border: 1.5px solid var(--bd); border-radius: 10px; padding: 8px 14px; width: 260px; transition: all 0.15s; }
   .topbar-search:focus-within { border-color: var(--g); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
   .topbar-search input { background: none; border: none; outline: none; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--tx); width: 100%; }
@@ -157,7 +168,7 @@ const styles = `
   /* ── CARDS ── */
   .card { background: var(--d1); border: 1.5px solid var(--bd); border-radius: 16px; overflow: hidden; box-shadow: 0 1px 4px rgba(15,23,42,0.04); }
   .card-header { padding: 18px 22px; border-bottom: 1px solid var(--bd); display: flex; align-items: center; justify-content: space-between; }
-  .card-title { font-size: 14px; font-weight: 700; color: var(--tx); display: flex; align-items: center; gap: 7px; font-family: 'Space Grotesk', sans-serif; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--tx); display: flex; align-items: center; gap: 7px; font-family: 'Outfit', sans-serif; }
   .card-body { padding: 22px; }
 
   /* ── STAT CARDS ── */
@@ -181,7 +192,7 @@ const styles = `
   .stat-icon-wrap.orange { background: rgba(245,158,11,0.2); }
   .stat-icon-wrap.purple { background: rgba(139,92,246,0.2); }
   .stat-icon { font-size: 20px; display: block; }
-  .stat-value { font-size: 30px; font-weight: 800; line-height: 1; margin-bottom: 5px; letter-spacing: -1px; font-family: 'Space Grotesk', sans-serif; }
+  .stat-value { font-size: 30px; font-weight: 800; line-height: 1; margin-bottom: 5px; letter-spacing: -1px; font-family: 'Outfit', sans-serif; }
   .stat-card.green .stat-value { color: #065F46; }
   .stat-card.blue .stat-value { color: #1D4ED8; }
   .stat-card.orange .stat-value, .stat-card.yellow .stat-value { color: #92400E; }
@@ -198,10 +209,10 @@ const styles = `
   .athlete-avatar-wrap { position: relative; width: fit-content; margin-bottom: 16px; }
   .athlete-avatar { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #D1FAE5, #DBEAFE); border: 2px solid var(--g4); display: flex; align-items: center; justify-content: center; font-size: 28px; }
   .athlete-sport-badge { position: absolute; bottom: -6px; right: -10px; background: var(--sb); border-radius: 100px; padding: 3px 8px; font-size: 8px; font-weight: 700; color: var(--g4); text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
-  .athlete-name { font-size: 15px; font-weight: 700; color: var(--tx); margin-bottom: 2px; font-family: 'Space Grotesk', sans-serif; }
+  .athlete-name { font-size: 15px; font-weight: 700; color: var(--tx); margin-bottom: 2px; font-family: 'Outfit', sans-serif; }
   .athlete-location { font-size: 12px; color: var(--mu2); margin-bottom: 14px; }
   .athlete-metrics { display: flex; gap: 20px; }
-  .metric-val { font-size: 18px; font-weight: 700; color: var(--tx); letter-spacing: -0.5px; font-family: 'Space Grotesk', sans-serif; }
+  .metric-val { font-size: 18px; font-weight: 700; color: var(--tx); letter-spacing: -0.5px; font-family: 'Outfit', sans-serif; }
   .metric-label { font-size: 10px; color: var(--mu); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 2px; font-weight: 600; }
 
   /* ── BUTTONS ── */
@@ -235,7 +246,7 @@ const styles = `
   .feed-post:hover { border-color: var(--g4); box-shadow: 0 8px 24px rgba(16,185,129,0.08); }
   .post-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
   .post-avatar { width: 44px; height: 44px; border-radius: 14px; background: var(--grad); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-  .post-author { font-weight: 700; font-size: 14px; color: var(--tx); font-family: 'Space Grotesk', sans-serif; }
+  .post-author { font-weight: 700; font-size: 14px; color: var(--tx); font-family: 'Outfit', sans-serif; }
   .post-meta { font-size: 11px; color: var(--mu2); display: flex; align-items: center; gap: 7px; margin-top: 2px; }
   .post-content { font-size: 14px; line-height: 1.7; color: var(--mu2); margin-bottom: 14px; }
   .post-actions { display: flex; gap: 6px; }
@@ -254,10 +265,10 @@ const styles = `
   .service-card:hover { border-color: var(--bl); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(59,130,246,0.12); }
   .service-icon { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #EFF6FF, #DBEAFE); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; }
   .service-cat { font-size: 10px; color: var(--bl3); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
-  .service-title { font-size: 15px; font-weight: 700; color: var(--tx); margin-bottom: 2px; font-family: 'Space Grotesk', sans-serif; }
+  .service-title { font-size: 15px; font-weight: 700; color: var(--tx); margin-bottom: 2px; font-family: 'Outfit', sans-serif; }
   .service-provider { font-size: 12px; color: var(--mu2); margin-bottom: 14px; }
   .service-footer { display: flex; align-items: center; justify-content: space-between; }
-  .service-price { font-size: 16px; color: var(--g2); font-weight: 800; letter-spacing: -0.5px; font-family: 'Space Grotesk', sans-serif; }
+  .service-price { font-size: 16px; color: var(--g2); font-weight: 800; letter-spacing: -0.5px; font-family: 'Outfit', sans-serif; }
 
   /* ── FORMS ── */
   .form-group { margin-bottom: 16px; }
@@ -272,7 +283,7 @@ const styles = `
   .modal { background: var(--d1); border: 1.5px solid var(--bd); border-radius: 20px; width: 100%; max-width: 500px; max-height: 82vh; overflow-y: auto; animation: slideUp 0.25s cubic-bezier(.4,0,.2,1); box-shadow: 0 24px 80px rgba(15,23,42,0.2); }
   @keyframes slideUp { from { opacity:0; transform: translateY(24px) scale(0.97); } to { opacity:1; transform: translateY(0) scale(1); } }
   .modal-header { padding: 22px 26px 18px; border-bottom: 1px solid var(--bd); display: flex; align-items: center; justify-content: space-between; }
-  .modal-title { font-size: 16px; font-weight: 700; color: var(--tx); font-family: 'Space Grotesk', sans-serif; }
+  .modal-title { font-size: 16px; font-weight: 700; color: var(--tx); font-family: 'Outfit', sans-serif; }
   .modal-body { padding: 22px 26px; }
   .modal-footer { padding: 16px 26px; border-top: 1px solid var(--bd); display: flex; gap: 10px; justify-content: flex-end; }
   .modal-close { background: var(--bk); border: 1px solid var(--bd); color: var(--mu); font-size: 18px; cursor: pointer; transition: all 0.15s; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; line-height: 1; }
@@ -286,7 +297,7 @@ const styles = `
   .auth-logo-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
   .auth-logo-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--grad); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(16,185,129,0.4); }
   .auth-logo-dot { width: 16px; height: 16px; border-radius: 50%; background: #fff; }
-  .auth-logo { font-size: 22px; font-weight: 800; color: var(--tx); letter-spacing: -0.5px; font-family: 'Space Grotesk', sans-serif; }
+  .auth-logo { font-size: 22px; font-weight: 800; color: var(--tx); letter-spacing: -0.5px; font-family: 'Outfit', sans-serif; }
   .auth-logo span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .auth-subtitle { font-size: 13px; color: var(--mu2); margin-bottom: 36px; line-height: 1.6; }
   .auth-tabs { display: flex; gap: 4px; margin-bottom: 28px; background: var(--bk); border-radius: 12px; padding: 4px; border: 1.5px solid var(--bd); }
@@ -297,7 +308,8 @@ const styles = `
   .role-btn { padding: 13px 6px; border-radius: 12px; border: 1.5px solid var(--bd); background: var(--bk); cursor: pointer; text-align: center; transition: all 0.15s; font-family: 'Inter', sans-serif; }
   .role-btn:hover { border-color: var(--g4); background: var(--g3); }
   .role-btn.selected { border-color: var(--g); background: linear-gradient(135deg, #ECFDF5, #EFF6FF); box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
-  .role-btn .role-icon { font-size: 22px; display: block; margin-bottom: 5px; }
+  .role-btn .role-icon { display: block; margin: 0 auto 6px; color: var(--mu2); }
+  .role-btn.selected .role-icon { color: var(--g2); }
   .role-btn .role-name { font-size: 10px; font-weight: 700; color: var(--mu2); text-transform: uppercase; letter-spacing: 0.3px; }
   .role-btn.selected .role-name { color: var(--g2); }
 
@@ -306,7 +318,7 @@ const styles = `
   .profile-hero::before { content: ''; position: absolute; top: -40px; right: -40px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(ellipse, rgba(16,185,129,0.15) 0%, transparent 70%); }
   .profile-avatar-lg { width: 84px; height: 84px; border-radius: 20px; background: var(--grad); border: 3px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 40px; flex-shrink: 0; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
   .profile-info { flex: 1; }
-  .profile-name { font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 8px; letter-spacing: -0.5px; font-family: 'Space Grotesk', sans-serif; }
+  .profile-name { font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 8px; letter-spacing: -0.5px; font-family: 'Outfit', sans-serif; }
   .profile-meta-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
   .profile-bio { font-size: 13px; color: #94A3B8; line-height: 1.7; max-width: 600px; margin-bottom: 18px; }
   .profile-socials { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -314,7 +326,7 @@ const styles = `
   .social-chip:hover { background: rgba(16,185,129,0.15); border-color: var(--g4); color: var(--g4); }
   .metrics-row { display: flex; gap: 32px; }
   .metric-big { text-align: center; }
-  .metric-big-val { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -1px; font-family: 'Space Grotesk', sans-serif; }
+  .metric-big-val { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -1px; font-family: 'Outfit', sans-serif; }
   .metric-big-label { font-size: 10px; color: #64748B; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-top: 3px; }
 
   /* ── TOAST ── */
@@ -324,7 +336,7 @@ const styles = `
   /* ── EMPTY STATES ── */
   .empty-state { text-align: center; padding: 64px 24px; }
   .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.35; }
-  .empty-title { font-size: 16px; font-weight: 700; color: var(--mu2); margin-bottom: 6px; font-family: 'Space Grotesk', sans-serif; }
+  .empty-title { font-size: 16px; font-weight: 700; color: var(--mu2); margin-bottom: 6px; font-family: 'Outfit', sans-serif; }
   .empty-text { font-size: 13px; color: var(--mu); line-height: 1.65; }
 
   /* ── LOADING ── */
@@ -340,7 +352,7 @@ const styles = `
   .mb-4{margin-bottom:4px}.mb-8{margin-bottom:8px}.mb-16{margin-bottom:16px}.mb-24{margin-bottom:24px}
   .text-muted{color:var(--mu2)}.text-green{color:var(--g2)}.text-sm{font-size:12px}.text-xs{font-size:11px}
   .font-bold{font-weight:700}
-  .section-title{font-size:20px;font-weight:800;color:var(--tx);margin-bottom:4px;letter-spacing:-0.5px;font-family:'Space Grotesk',sans-serif}
+  .section-title{font-size:20px;font-weight:800;color:var(--tx);margin-bottom:4px;letter-spacing:-0.5px;font-family:'Outfit',sans-serif}
   .section-sub{font-size:13px;color:var(--mu2)}
 
   /* ── NOTIFICATIONS ── */
@@ -348,7 +360,7 @@ const styles = `
   .notif-count { position: absolute; top: -5px; right: -5px; background: var(--rd); color: #fff; font-size: 9px; font-weight: 800; min-width: 18px; height: 18px; border-radius: 100px; display: flex; align-items: center; justify-content: center; padding: 0 4px; border: 2px solid #fff; }
   .notif-panel { position: absolute; top: 50px; right: 0; background: var(--d1); border: 1.5px solid var(--bd); border-radius: 18px; box-shadow: 0 20px 60px rgba(15,23,42,0.16); width: 380px; z-index: 300; overflow: hidden; animation: slideUp 0.2s ease; }
   .notif-panel-header { padding: 18px 22px 14px; border-bottom: 1px solid var(--bd); display: flex; align-items: center; justify-content: space-between; }
-  .notif-panel-title { font-size: 15px; font-weight: 700; color: var(--tx); font-family: 'Space Grotesk', sans-serif; }
+  .notif-panel-title { font-size: 15px; font-weight: 700; color: var(--tx); font-family: 'Outfit', sans-serif; }
   .notif-list { max-height: 400px; overflow-y: auto; }
   .notif-item { padding: 14px 22px; border-bottom: 1px solid var(--bd); cursor: pointer; transition: background 0.1s; }
   .notif-item:hover { background: var(--bk); }
@@ -369,7 +381,7 @@ const styles = `
   /* ── MESSAGES ── */
   .messages-layout { display: grid; grid-template-columns: 280px 1fr; height: 100%; gap: 0; background: var(--d1); border-radius: 16px; overflow: hidden; border: 1.5px solid var(--bd); }
   .conv-list { border-right: 1px solid var(--bd); overflow-y: auto; }
-  .conv-list-header { padding: 18px 20px; border-bottom: 1px solid var(--bd); font-weight: 700; font-size: 14px; color: var(--tx); font-family: 'Space Grotesk', sans-serif; }
+  .conv-list-header { padding: 18px 20px; border-bottom: 1px solid var(--bd); font-weight: 700; font-size: 14px; color: var(--tx); font-family: 'Outfit', sans-serif; }
   .conv-item { padding: 14px 20px; display: flex; gap: 10px; align-items: center; cursor: pointer; transition: background 0.1s; border-bottom: 1px solid var(--bd); }
   .conv-item:hover { background: var(--bk); }
   .conv-item.active { background: linear-gradient(135deg, rgba(16,185,129,0.07), rgba(59,130,246,0.05)); border-left: 3px solid var(--g); }
@@ -413,14 +425,57 @@ const styles = `
   .empresa-widget { background: linear-gradient(135deg, var(--sb), #1E293B); border-radius: 16px; padding: 20px; margin-bottom: 14px; position: relative; overflow: hidden; }
   .empresa-widget::before { content: ''; position: absolute; top: -30px; right: -30px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(ellipse, rgba(16,185,129,0.2) 0%, transparent 70%); }
   .empresa-crown { font-size: 11px; font-weight: 700; color: var(--g4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-  .empresa-name { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 4px; font-family: 'Space Grotesk', sans-serif; }
+  .empresa-name { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 4px; font-family: 'Outfit', sans-serif; }
   .empresa-stats { display: flex; gap: 16px; margin-top: 10px; }
   .empresa-stat { text-align: center; }
-  .empresa-stat-val { font-size: 16px; font-weight: 800; color: #fff; font-family: 'Space Grotesk', sans-serif; }
+  .empresa-stat-val { font-size: 16px; font-weight: 800; color: #fff; font-family: 'Outfit', sans-serif; }
   .empresa-stat-label { font-size: 9px; color: #64748B; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+
+  /* ── DASHBOARD HERO ── */
+  .dash-hero { position: relative; overflow: hidden; border-radius: 22px; padding: 30px 34px; margin-bottom: 22px; background: linear-gradient(120deg, #059669 0%, #0D9488 48%, #2563EB 100%); box-shadow: 0 16px 40px rgba(5,150,105,0.25); }
+  .dash-hero::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.16) 1.5px, transparent 1.5px); background-size: 20px 20px; opacity: 0.6; }
+  .dash-hero::after { content: ''; position: absolute; right: -70px; top: -80px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.22) 0%, transparent 70%); }
+  .dash-hero-blob2 { position: absolute; left: -40px; bottom: -60px; width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%); }
+  .dash-hero-inner { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .dash-hero-greeting { font-size: 25px; font-weight: 800; font-family: 'Outfit', sans-serif; letter-spacing: -0.5px; color: #fff; display: flex; align-items: center; gap: 10px; }
+  .dash-hero-sub { font-size: 13px; color: rgba(255,255,255,0.88); margin-top: 7px; max-width: 440px; line-height: 1.55; }
+  .dash-hero-chips { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .dash-hero-chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.28); padding: 6px 14px; border-radius: 100px; font-size: 12px; font-weight: 700; color: #fff; backdrop-filter: blur(4px); }
+
+  /* ── STAT CARDS (refresh) ── */
+  .stat-card { border-top: 4px solid transparent; }
+  .stat-card::before { width: 130px; height: 130px; top: -35px; right: -35px; opacity: 0.22; }
+  .stat-card.green { border-top-color: #10B981; }
+  .stat-card.blue { border-top-color: #3B82F6; }
+  .stat-card.orange { border-top-color: #F59E0B; }
+  .stat-card.purple { border-top-color: #8B5CF6; }
+  .stat-card.yellow { border-top-color: #F59E0B; }
+  .stat-card:hover { transform: translateY(-4px) scale(1.01); }
+  .stat-icon-wrap { width: 46px; height: 46px; border-radius: 14px; transition: transform 0.25s cubic-bezier(.34,1.56,.64,1); }
+  .stat-card:hover .stat-icon-wrap { transform: rotate(-6deg) scale(1.1); }
+  .stat-icon { font-size: 22px; }
 `;
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+function DashboardHero({ profile, subtitle }) {
+  const RoleIcon = ROLES.find(r => r.key === profile.role)?.icon || Trophy;
+  return (
+    <div className="dash-hero">
+      <div className="dash-hero-blob2" />
+      <div className="dash-hero-inner">
+        <div>
+          <div className="dash-hero-greeting">Olá, {profile.name?.split(' ')[0] || 'Atleta'}</div>
+          <div className="dash-hero-sub">{subtitle}</div>
+          <div className="dash-hero-chips">
+            {profile.sport && <span className="dash-hero-chip"><Dumbbell size={14}/> {profile.sport}</span>}
+            <span className="dash-hero-chip"><RoleIcon size={14}/> {ROLES.find(r => r.key === profile.role)?.label || 'Atleta'}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function initials(name) {
   return (name || 'U').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
@@ -436,7 +491,7 @@ function Avatar({ src, name, size = 40, radius = '50%', fontSize, style = {}, cl
   // If a name is provided and no photo/emoji, show initials
   const display = isUrl(src) ? null : (src && !src.startsWith('http') ? src : null) || (name ? initials(name) : '🏅');
   return (
-    <div style={{ width: size, height: size, borderRadius: radius, background: 'var(--grad)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fs, flexShrink: 0, color: '#fff', fontWeight: 800, fontFamily: "'Space Grotesk',sans-serif", ...style }} className={className}>
+    <div style={{ width: size, height: size, borderRadius: radius, background: 'var(--grad)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fs, flexShrink: 0, color: '#fff', fontWeight: 800, fontFamily: "'Outfit',sans-serif", ...style }} className={className}>
       {display}
     </div>
   );
@@ -566,7 +621,7 @@ function AuthScreen({ onLogin }) {
         const { data, error } = await api.signUp(email, pass);
         if (error) throw new Error(error.message);
         if (!data.user) throw new Error('Verifique seu e-mail para confirmar o cadastro.');
-        const newProfile = { id: data.user.id, role, name, sport: sport || '', avatar: '🏅' };
+        const newProfile = { id: data.user.id, role, name, sport: sport || '', avatar: null };
         await api.createProfile(newProfile);
         onLogin(data.user, newProfile);
       }
@@ -599,7 +654,7 @@ function AuthScreen({ onLogin }) {
               <div className="role-grid">
                 {ROLES.map(r => (
                   <button key={r.key} className={`role-btn ${role === r.key ? 'selected' : ''}`} onClick={() => setRole(r.key)}>
-                    <span className="role-icon">{r.icon}</span>
+                    <r.icon size={22} strokeWidth={2} className="role-icon" />
                     <span className="role-name">{r.label}</span>
                   </button>
                 ))}
@@ -641,7 +696,7 @@ function AuthScreen({ onLogin }) {
         {tab === 'signup' && (
           <>
             <div style={{ background: 'var(--bk)', borderRadius: 12, padding: 14, marginBottom: 14, fontSize: 12, color: 'var(--mu2)', lineHeight: 1.7, border: '1px solid var(--bd)' }}>
-              <div style={{ fontWeight: 700, color: 'var(--tx)', marginBottom: 8 }}>⚠️ Restrição de Idade</div>
+              <div style={{ fontWeight: 700, color: 'var(--tx)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={15} color="var(--or3)"/> Restrição de Idade</div>
               Esta plataforma é destinada a maiores de 18 anos. Menores de idade somente podem participar com o consentimento expresso de seus responsáveis legais, conforme ECA (Lei nº 8.069/1990).
             </div>
             <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer', marginBottom: 16 }}>
@@ -654,7 +709,7 @@ function AuthScreen({ onLogin }) {
               <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.7)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
                 <div style={{ background: '#fff', borderRadius: 20, padding: 32, maxWidth: 560, maxHeight: '80vh', overflowY: 'auto', position: 'relative' }}>
                   <button onClick={() => setShowTerms(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'var(--bk)', border: '1px solid var(--bd)', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', fontSize: 16 }}>×</button>
-                  <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 20, fontFamily: "'Space Grotesk',sans-serif" }}>Termos de Uso e Privacidade</div>
+                  <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 20, fontFamily: "'Outfit',sans-serif" }}>Termos de Uso e Privacidade</div>
                   {[
                     ['1. Proteção de Dados — LGPD (Lei nº 13.709/2018)', 'Seus dados pessoais são coletados exclusivamente para o funcionamento da plataforma ConectaAtleta, com base no seu consentimento explícito. Você tem o direito de acessar, corrigir, eliminar, portabilizar e revogar o consentimento sobre seus dados a qualquer momento, mediante solicitação em nossos canais de atendimento.'],
                     ['2. Marco Civil da Internet (Lei nº 12.965/2014)', 'Garantimos a privacidade e inviolabilidade das suas comunicações privadas. Seus dados de navegação não serão compartilhados com terceiros sem consentimento, exceto mediante ordem judicial.'],
@@ -696,13 +751,13 @@ function DashboardAtleta({ profile, sponsorships, campaigns }) {
   return (
     <div className="stat-grid">
       <div className="stat-card green">
-        <div className="stat-icon-wrap green"><span className="stat-icon">👥</span></div>
+        <div className="stat-icon-wrap green"><Users size={20} className="stat-icon"/></div>
         <div className="stat-value">{(profile.followers || 0).toLocaleString()}</div>
         <div className="stat-label">Seguidores</div>
         <div className="stat-change">Perfil público</div>
       </div>
       <div className="stat-card blue">
-        <div className="stat-icon-wrap blue"><span className="stat-icon">📊</span></div>
+        <div className="stat-icon-wrap blue"><Flame size={20} className="stat-icon"/></div>
         <div className="stat-value">
           {(() => {
             const eng = calcEngagement(profile, sponsorships);
@@ -712,12 +767,12 @@ function DashboardAtleta({ profile, sponsorships, campaigns }) {
         <div className="stat-label">Engajamento na rede</div>
       </div>
       <div className="stat-card orange">
-        <div className="stat-icon-wrap orange"><span className="stat-icon">🤝</span></div>
+        <div className="stat-icon-wrap orange"><Handshake size={20} className="stat-icon"/></div>
         <div className="stat-value">{active}</div>
         <div className="stat-label">Patrocínios ativos</div>
       </div>
       <div className="stat-card purple">
-        <div className="stat-icon-wrap purple"><span className="stat-icon">💰</span></div>
+        <div className="stat-icon-wrap purple"><Wallet size={20} className="stat-icon"/></div>
         <div className="stat-value">R${(myRaised / 1000).toFixed(1)}K</div>
         <div className="stat-label">Captado crowdfunding</div>
       </div>
@@ -736,18 +791,15 @@ function DashboardEmpresa({ profile, sponsorships, athletes }) {
 
   return (
     <div>
-      <div className="mb-24">
-        <h2 className="section-title">Olá, {profile.name?.split(' ')[0]} 👋</h2>
-        <p className="text-muted text-sm">Painel de patrocínios e ROI da sua empresa.</p>
-      </div>
+      <DashboardHero profile={profile} subtitle="Painel de patrocínios e ROI da sua empresa." />
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
-        <div className="stat-card green"><div className="stat-icon-wrap green"><span className="stat-icon">🤝</span></div><div className="stat-value">{active}</div><div className="stat-label">Atletas patrocinados</div></div>
-        <div className="stat-card blue"><div className="stat-icon-wrap blue"><span className="stat-icon">📣</span></div><div className="stat-value">{reach >= 1000 ? `${(reach/1000).toFixed(0)}K` : reach}</div><div className="stat-label">Alcance estimado</div></div>
-        <div className="stat-card orange"><div className="stat-icon-wrap orange"><span className="stat-icon">💰</span></div><div className="stat-value">R${total.toLocaleString()}</div><div className="stat-label">Investimento total/ano</div></div>
+        <div className="stat-card green"><div className="stat-icon-wrap green"><Handshake size={20} className="stat-icon"/></div><div className="stat-value">{active}</div><div className="stat-label">Atletas patrocinados</div></div>
+        <div className="stat-card blue"><div className="stat-icon-wrap blue"><Megaphone size={20} className="stat-icon"/></div><div className="stat-value">{reach >= 1000 ? `${(reach/1000).toFixed(0)}K` : reach}</div><div className="stat-label">Alcance estimado</div></div>
+        <div className="stat-card orange"><div className="stat-icon-wrap orange"><Wallet size={20} className="stat-icon"/></div><div className="stat-value">R${total.toLocaleString()}</div><div className="stat-label">Investimento total/ano</div></div>
       </div>
       {mySpons.length > 0 && (
         <div className="card mt-16">
-          <div className="card-header"><div className="card-title">🏆 Atletas que você patrocina</div><span className="badge badge-green">{active} ativos</span></div>
+          <div className="card-header"><div className="card-title"><Trophy size={15}/> Atletas que você patrocina</div><span className="badge badge-green">{active} ativos</span></div>
           <table className="table"><thead><tr><th>Atleta</th><th>Valor/ano</th><th>Status</th></tr></thead>
           <tbody>{mySpons.slice(0, 5).map(s => (
             <tr key={s.id}><td><div style={{ fontWeight: 600, fontSize: 13 }}>{s.athlete}</div></td>
@@ -765,14 +817,11 @@ function DashboardProfissional({ profile, services }) {
   const avgRating = myServices.length > 0 ? (myServices.reduce((sum, s) => sum + (s.rating || 5), 0) / myServices.length).toFixed(1) : '—';
   return (
     <div>
-      <div className="mb-24">
-        <h2 className="section-title">Olá, {profile.name?.split(' ')[0]} 👋</h2>
-        <p className="text-muted text-sm">Área: <strong>{profile.sport || '—'}</strong> · Gerencie seus serviços.</p>
-      </div>
+      <DashboardHero profile={profile} subtitle="Gerencie seus serviços e acompanhe suas avaliações." />
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
-        <div className="stat-card green"><div className="stat-icon-wrap green"><span className="stat-icon">📦</span></div><div className="stat-value">{myServices.length}</div><div className="stat-label">Serviços cadastrados</div></div>
-        <div className="stat-card blue"><div className="stat-icon-wrap blue"><span className="stat-icon">👥</span></div><div className="stat-value">{myServices.reduce((sum, s) => sum + (s.reviews || 0), 0)}</div><div className="stat-label">Avaliações recebidas</div></div>
-        <div className="stat-card orange"><div className="stat-icon-wrap orange"><span className="stat-icon">⭐</span></div><div className="stat-value">{avgRating}</div><div className="stat-label">Avaliação média</div></div>
+        <div className="stat-card green"><div className="stat-icon-wrap green"><Package size={20} className="stat-icon"/></div><div className="stat-value">{myServices.length}</div><div className="stat-label">Serviços cadastrados</div></div>
+        <div className="stat-card blue"><div className="stat-icon-wrap blue"><Users size={20} className="stat-icon"/></div><div className="stat-value">{myServices.reduce((sum, s) => sum + (s.reviews || 0), 0)}</div><div className="stat-label">Avaliações recebidas</div></div>
+        <div className="stat-card orange"><div className="stat-icon-wrap orange"><Star size={20} className="stat-icon"/></div><div className="stat-value">{avgRating}</div><div className="stat-label">Avaliação média</div></div>
       </div>
     </div>
   );
@@ -791,21 +840,18 @@ function Dashboard({ profile, user, sponsorships, campaigns, posts, athletes, se
 
   return (
     <div>
-      <div className="mb-24">
-        <h2 className="section-title">Olá, {profile.name?.split(' ')[0]} 👋</h2>
-        <p className="text-muted text-sm">Aqui está o resumo do ecossistema.</p>
-      </div>
+      <DashboardHero profile={profile} subtitle="Aqui está o resumo do seu ecossistema esportivo hoje." />
       <DashboardAtleta profile={profile} sponsorships={sponsorships} campaigns={campaigns} />
       <div className="stat-grid mt-16">
-        <div className="stat-card green"><div className="stat-icon-wrap green"><span className="stat-icon">🏃</span></div><div className="stat-value">{stats.totalAthletes.toLocaleString()}</div><div className="stat-label">Atletas na plataforma</div></div>
-        <div className="stat-card orange"><div className="stat-icon-wrap blue"><span className="stat-icon">🤝</span></div><div className="stat-value">{stats.activeSponsorships}</div><div className="stat-label">Patrocínios ativos</div></div>
-        <div className="stat-card blue"><div className="stat-icon-wrap orange"><span className="stat-icon">🩺</span></div><div className="stat-value">{stats.servicesCount}</div><div className="stat-label">Profissionais cadastrados</div></div>
-        <div className="stat-card yellow"><div className="stat-icon-wrap purple"><span className="stat-icon">💰</span></div><div className="stat-value">R${(stats.raised / 1000).toFixed(0)}K</div><div className="stat-label">Captado via crowdfunding</div></div>
+        <div className="stat-card green"><div className="stat-icon-wrap green"><PersonStanding size={20} className="stat-icon"/></div><div className="stat-value">{stats.totalAthletes.toLocaleString()}</div><div className="stat-label">Atletas na plataforma</div></div>
+        <div className="stat-card orange"><div className="stat-icon-wrap orange"><Handshake size={20} className="stat-icon"/></div><div className="stat-value">{stats.activeSponsorships}</div><div className="stat-label">Patrocínios ativos</div></div>
+        <div className="stat-card blue"><div className="stat-icon-wrap blue"><Stethoscope size={20} className="stat-icon"/></div><div className="stat-value">{stats.servicesCount}</div><div className="stat-label">Profissionais cadastrados</div></div>
+        <div className="stat-card purple"><div className="stat-icon-wrap purple"><Wallet size={20} className="stat-icon"/></div><div className="stat-value">R${(stats.raised / 1000).toFixed(0)}K</div><div className="stat-label">Captado via crowdfunding</div></div>
       </div>
 
       <div className="grid-2" style={{ marginTop: 20 }}>
         <div className="card">
-          <div className="card-header"><div className="card-title">📋 Feed Recente</div></div>
+          <div className="card-header"><div className="card-title"><Rss size={15}/> Feed Recente</div></div>
           <div className="card-body" style={{ padding: 16 }}>
             {posts.slice(0, 3).map(post => (
               <div key={post.id} className="feed-post" style={{ marginBottom: 8 }}>
@@ -825,7 +871,7 @@ function Dashboard({ profile, user, sponsorships, campaigns, posts, athletes, se
 
         <div>
           <div className="card mb-16">
-            <div className="card-header"><div className="card-title">🏆 Meus Patrocínios</div></div>
+            <div className="card-header"><div className="card-title"><Trophy size={15}/> Meus Patrocínios</div></div>
             <div className="card-body" style={{ padding: 0 }}>
               {sponsorships.filter(s => s.athlete_id === user?.id || s.sponsor_id === user?.id).length === 0 ? (
                 <div className="empty-state" style={{ padding: 24 }}><div className="empty-text">Nenhum patrocínio ainda</div></div>
@@ -843,7 +889,7 @@ function Dashboard({ profile, user, sponsorships, campaigns, posts, athletes, se
           </div>
 
           <div className="card">
-            <div className="card-header"><div className="card-title">💰 Campanhas em Andamento</div></div>
+            <div className="card-header"><div className="card-title"><Wallet size={15}/> Campanhas em Andamento</div></div>
             <div className="card-body" style={{ padding: 16 }}>
               {campaigns.slice(0, 3).map(c => {
                 const pct = Math.min(100, Math.round(((c.raised || 0) / (c.goal || 1)) * 100));
@@ -889,7 +935,7 @@ function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, 
     <div>
       <div className="row-between mb-24">
         <div>
-          <div className="section-title">🏃‍♀️ Atletas</div>
+          <div className="section-title" style={{display:"flex",alignItems:"center",gap:8}}><PersonStanding size={20}/> Atletas</div>
           <div className="text-muted text-sm">{athletes.length} atletas na rede</div>
         </div>
       </div>
@@ -964,20 +1010,20 @@ function SponsorshipsPage({ sponsorships, userId, onShowModal, onOpenChat }) {
     <div>
       <div className="row-between mb-24">
         <div>
-          <div className="section-title">🤝 Patrocínios</div>
+          <div className="section-title" style={{display:"flex",alignItems:"center",gap:8}}><Handshake size={20}/> Patrocínios</div>
           <div className="text-muted text-sm">Gerencie propostas e parcerias ativas</div>
         </div>
         <button className="btn btn-primary" onClick={() => onShowModal('newSponsorship')}>+ Nova Proposta</button>
       </div>
 
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 24 }}>
-        <div className="stat-card green"><span className="stat-icon">✅</span><div className="stat-value">{mine.filter(s => s.status === 'active').length}</div><div className="stat-label">Ativos</div></div>
-        <div className="stat-card yellow"><span className="stat-icon">⏳</span><div className="stat-value">{mine.filter(s => s.status === 'pending').length}</div><div className="stat-label">Pendentes</div></div>
-        <div className="stat-card orange"><span className="stat-icon">💰</span><div className="stat-value">R${mine.reduce((a, s) => a + (s.value || 0), 0).toLocaleString()}</div><div className="stat-label">Volume total/ano</div></div>
+        <div className="stat-card green"><div className="stat-icon-wrap green"><CheckCircle2 size={20} className="stat-icon"/></div><div className="stat-value">{mine.filter(s => s.status === 'active').length}</div><div className="stat-label">Ativos</div></div>
+        <div className="stat-card yellow"><div className="stat-icon-wrap orange"><Clock size={20} className="stat-icon"/></div><div className="stat-value">{mine.filter(s => s.status === 'pending').length}</div><div className="stat-label">Pendentes</div></div>
+        <div className="stat-card orange"><div className="stat-icon-wrap orange"><Wallet size={20} className="stat-icon"/></div><div className="stat-value">R${mine.reduce((a, s) => a + (s.value || 0), 0).toLocaleString()}</div><div className="stat-label">Volume total/ano</div></div>
       </div>
 
       <div className="card">
-        <div className="card-header"><div className="card-title">📋 Meus Patrocínios</div></div>
+        <div className="card-header"><div className="card-title"><Rss size={15}/> Meus Patrocínios</div></div>
         {mine.length === 0 ? (
           <div className="empty-state"><div className="empty-icon">🤝</div><div className="empty-title">Nenhum patrocínio ainda</div><div className="empty-text">Crie uma proposta para começar.</div></div>
         ) : (
@@ -1004,7 +1050,7 @@ function SponsorshipsPage({ sponsorships, userId, onShowModal, onOpenChat }) {
       </div>
 
       <div className="card mt-24">
-        <div className="card-header"><div className="card-title">⚡ Lei de Incentivo ao Esporte</div><span className="badge badge-yellow">Benefício Fiscal</span></div>
+        <div className="card-header"><div className="card-title"><Zap size={15}/> Lei de Incentivo ao Esporte</div><span className="badge badge-yellow">Benefício Fiscal</span></div>
         <div className="card-body">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
             <div>
@@ -1040,7 +1086,7 @@ function MarketplacePage({ services, onShowModal, userRole, serviceRequests, onO
     <div>
       <div className="row-between mb-24">
         <div>
-          <div className="section-title">🩺 Profissionais do Esporte</div>
+          <div className="section-title" style={{display:"flex",alignItems:"center",gap:8}}><Stethoscope size={20}/> Profissionais do Esporte</div>
           <div className="text-muted text-sm">Encontre os melhores profissionais especializados</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -1146,16 +1192,16 @@ function CrowdfundingPage({ campaigns, onShowModal }) {
     <div>
       <div className="row-between mb-24">
         <div>
-          <div className="section-title">💰 Crowdfunding Esportivo</div>
+          <div className="section-title" style={{display:"flex",alignItems:"center",gap:8}}><Wallet size={20}/> Crowdfunding Esportivo</div>
           <div className="text-muted text-sm">Apoie atletas ou crie sua própria campanha</div>
         </div>
         <button className="btn btn-primary" onClick={() => onShowModal('newCampaign')}>+ Nova Campanha</button>
       </div>
 
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 24 }}>
-        <div className="stat-card green"><span className="stat-icon">🎯</span><div className="stat-value">{campaigns.length}</div><div className="stat-label">Campanhas ativas</div></div>
-        <div className="stat-card yellow"><span className="stat-icon">💰</span><div className="stat-value">R${(totalRaised / 1000).toFixed(1)}K</div><div className="stat-label">Captado total</div></div>
-        <div className="stat-card blue"><span className="stat-icon">👥</span><div className="stat-value">{campaigns.length * 12}</div><div className="stat-label">Apoiadores estimados</div></div>
+        <div className="stat-card green"><div className="stat-icon-wrap green"><Target size={20} className="stat-icon"/></div><div className="stat-value">{campaigns.length}</div><div className="stat-label">Campanhas ativas</div></div>
+        <div className="stat-card yellow"><div className="stat-icon-wrap orange"><Wallet size={20} className="stat-icon"/></div><div className="stat-value">R${(totalRaised / 1000).toFixed(1)}K</div><div className="stat-label">Captado total</div></div>
+        <div className="stat-card blue"><div className="stat-icon-wrap blue"><Users size={20} className="stat-icon"/></div><div className="stat-value">{campaigns.length * 12}</div><div className="stat-label">Apoiadores estimados</div></div>
       </div>
 
       {campaigns.length === 0 ? (
@@ -1252,7 +1298,7 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
   return (
     <div style={{ maxWidth: 680, margin: '0 auto' }}>
       <div className="mb-24">
-        <div className="section-title">📋 Feed da Comunidade</div>
+        <div className="section-title" style={{display:"flex",alignItems:"center",gap:8}}><Rss size={20}/> Feed da Comunidade</div>
         <div className="text-muted text-sm">Acompanhe treinos, conquistas e histórias</div>
       </div>
 
@@ -1462,7 +1508,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
 
       <div className="grid-2">
         <div className="card">
-          <div className="card-header"><div className="card-title">⚡ Editar Perfil</div></div>
+          <div className="card-header"><div className="card-title"><Zap size={15}/> Editar Perfil</div></div>
           <div className="card-body">
             <div className="form-group">
               <label className="form-label">Nome</label>
@@ -1497,7 +1543,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
 
         <div>
           <div className="card mb-16">
-            <div className="card-header"><div className="card-title">🔗 Redes Sociais</div></div>
+            <div className="card-header"><div className="card-title"><Link2 size={15}/> Redes Sociais</div></div>
             <div className="card-body">
               <div className="form-group">
                 <label className="form-label">Instagram</label>
@@ -1518,7 +1564,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
           </div>
 
           <div className="card">
-            <div className="card-header"><div className="card-title">🎯 Área de Interesse</div></div>
+            <div className="card-header"><div className="card-title"><Target size={15}/> Área de Interesse</div></div>
             <div className="card-body">
               <p style={{ fontSize: 13, color: 'var(--mu2)', lineHeight: 1.6, marginBottom: 16 }}>
                 Escolha quais conteúdos você quer ver no feed.
@@ -1544,7 +1590,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
           </div>
 
           <div className="card">
-            <div className="card-header"><div className="card-title">📄 Mídia Kit</div><span className="badge badge-purple">IA</span></div>
+            <div className="card-header"><div className="card-title"><FileText size={15}/> Mídia Kit</div><span className="badge badge-purple">IA</span></div>
             <div className="card-body">
               <p style={{ fontSize: 13, color: 'var(--mu2)', lineHeight: 1.6, marginBottom: 16 }}>
                 Gere automaticamente um mídia kit profissional com suas métricas consolidadas.
@@ -1556,7 +1602,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
       </div>
 
       <div className="card mt-16">
-        <div className="card-header"><div className="card-title">🏆 Bio de Resultados</div></div>
+        <div className="card-header"><div className="card-title"><Trophy size={15}/> Bio de Resultados</div></div>
         <div className="card-body">
           <div className="form-group">
             <label className="form-label">Principais Conquistas</label>
@@ -1571,7 +1617,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
       {/* ── Privacidade ── */}
       <div className="card mt-16">
         <div className="card-header">
-          <div className="card-title">🔒 Privacidade e Visibilidade</div>
+          <div className="card-title"><Lock size={15}/> Privacidade e Visibilidade</div>
           {profile.is_premium && <span className="badge badge-yellow">⭐ Premium</span>}
         </div>
         <div className="card-body">
@@ -1602,7 +1648,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
       {(friendRequests || []).length > 0 && (
         <div className="card mt-16">
           <div className="card-header">
-            <div className="card-title">🤝 Convites Pendentes</div>
+            <div className="card-title"><Handshake size={15}/> Convites Pendentes</div>
             <span className="badge badge-green">{friendRequests.length}</span>
           </div>
           <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -1627,7 +1673,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
       {(profile.role === 'empresa' || profile.role === 'profissional') && !profile.is_premium && (
         <div className="card mt-16" style={{ border: '1.5px solid var(--yl)', background: 'linear-gradient(135deg,var(--d1),rgba(245,158,11,0.06))' }}>
           <div className="card-header">
-            <div className="card-title">⭐ Seja Premium</div>
+            <div className="card-title"><Star size={15}/> Seja Premium</div>
             <span className="badge badge-yellow">R$ {premiumPrice}/mês</span>
           </div>
           <div className="card-body">
@@ -1648,7 +1694,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
 
       {profile.role === 'atleta' && (
         <div className="card mt-16">
-          <div className="card-header"><div className="card-title">📅 Histórico de Resultados</div><span className="badge badge-green">{results.length} eventos</span></div>
+          <div className="card-header"><div className="card-title"><CalendarDays size={15}/> Histórico de Resultados</div><span className="badge badge-green">{results.length} eventos</span></div>
           <div className="card-body">
             <ResultsChart results={results} />
             <div style={{ marginTop: 20, marginBottom: 12, fontWeight: 700, fontSize: 13, color: 'var(--tx)' }}>Adicionar Resultado</div>
@@ -1721,7 +1767,7 @@ function NotificationsPanel({ notifications, onClose, onMarkRead, friendRequests
     return `${Math.floor(h / 24)}d`;
   }
 
-  const typeIcon = { service_request: '🔔', info: 'ℹ️', follow: '👤', connection_request: '🤝' };
+  const typeIcon = { service_request: Stethoscope, info: Bell, follow: User, connection_request: Handshake };
   const total = (friendRequests?.length || 0) + unread;
 
   return (
@@ -1737,7 +1783,7 @@ function NotificationsPanel({ notifications, onClose, onMarkRead, friendRequests
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <Avatar src={req.requester?.avatar} name={req.requester?.name} size={36} radius={10} />
               <div style={{ flex: 1 }}>
-                <div className="notif-item-title">🤝 Convite de conexão</div>
+                <div className="notif-item-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Handshake size={14} /> Convite de conexão</div>
                 <div className="notif-item-msg"><strong>{req.requester?.name}</strong> quer se conectar com você</div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                   <button className="btn btn-primary btn-sm" onClick={() => onRespondRequest(req.id, req.requester_id, true)}>✓ Aceitar</button>
@@ -1748,11 +1794,11 @@ function NotificationsPanel({ notifications, onClose, onMarkRead, friendRequests
           </div>
         ))}
         {notifications.length === 0 && (friendRequests?.length || 0) === 0 ? (
-          <div className="notif-empty">Nenhuma notificação ainda 🔕</div>
+          <div className="notif-empty">Nenhuma notificação ainda</div>
         ) : notifications.map(n => (
           <div key={n.id} className={`notif-item ${!n.read ? 'unread' : ''}`}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: 18, flexShrink: 0 }}>{typeIcon[n.type] || '🔔'}</span>
+              {(() => { const TIcon = typeIcon[n.type] || Bell; return <TIcon size={17} strokeWidth={2.2} style={{ flexShrink: 0, color: 'var(--mu2)', marginTop: 2 }} />; })()}
               <div style={{ flex: 1 }}>
                 <div className="notif-item-title">{n.title}</div>
                 {n.message && <div className="notif-item-msg">{n.message}</div>}
@@ -1793,15 +1839,15 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
           <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
             <Avatar src={athlete.avatar} size={72} radius={18} style={{ border: '3px solid rgba(255,255,255,0.2)', flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Space Grotesk',sans-serif", letterSpacing: -0.5, marginBottom: 4 }}>{athlete.name}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Outfit',sans-serif", letterSpacing: -0.5, marginBottom: 4 }}>{athlete.name}</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
                 {athlete.sport && <span className="badge badge-green">{athlete.sport}</span>}
                 {athlete.location && <span style={{ fontSize: 12, color: '#94A3B8' }}>📍 {athlete.location}</span>}
               </div>
               {athlete.bio && <p style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.6, marginBottom: 14 }}>{athlete.bio}</p>}
               <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
-                <div><div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Space Grotesk',sans-serif" }}>{(athlete.followers || 0).toLocaleString()}</div><div style={{ fontSize: 10, color: '#64748B', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>Seguidores</div></div>
-                <div><div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Space Grotesk',sans-serif" }}>{athlete.engagement || 0}%</div><div style={{ fontSize: 10, color: '#64748B', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>Engajamento</div></div>
+                <div><div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Outfit',sans-serif" }}>{(athlete.followers || 0).toLocaleString()}</div><div style={{ fontSize: 10, color: '#64748B', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>Seguidores</div></div>
+                <div><div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Outfit',sans-serif" }}>{athlete.engagement || 0}%</div><div style={{ fontSize: 10, color: '#64748B', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>Engajamento</div></div>
               </div>
               {currentUserId !== athlete.id && (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -1829,7 +1875,7 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
 
           {/* ── Resultados dos últimos 12 meses ── */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Space Grotesk',sans-serif", marginBottom: 14 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Outfit',sans-serif", marginBottom: 14 }}>
               🏆 Resultados — Últimos 12 meses
             </div>
             {loading ? (
@@ -1865,7 +1911,7 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
 
           {/* ── Publicações ── */}
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Space Grotesk',sans-serif", marginBottom: 14 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Outfit',sans-serif", marginBottom: 14 }}>
               📋 Publicações
             </div>
             {loading ? null : posts.length === 0 ? (
@@ -2060,7 +2106,7 @@ function MessagesPage({ profile, allProfiles, initialContact, onClearInitial }) 
   return (
     <div style={{ height: 'calc(100vh - 144px)' }}>
       <div className="row-between mb-16">
-        <div className="section-title">💬 Mensagens</div>
+        <div className="section-title" style={{display:"flex",alignItems:"center",gap:8}}><MessageCircle size={20}/> Mensagens</div>
         <select className="form-input" style={{ width: 'auto', maxWidth: 240 }}
           onChange={e => { const p = otherProfiles.find(x => x.id === e.target.value); if (p) setSelected(p); }}
           defaultValue="">
@@ -2090,7 +2136,7 @@ function MessagesPage({ profile, allProfiles, initialContact, onClearInitial }) 
             <div className="chat-header">
               <Avatar src={selected.avatar} name={selected.name} size={40} radius={12} />
               <div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--tx)', fontFamily: "'Space Grotesk',sans-serif" }}>{selected.name}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--tx)', fontFamily: "'Outfit',sans-serif" }}>{selected.name}</div>
                 <div style={{ fontSize: 11, color: 'var(--mu2)' }}>{selected.role}</div>
               </div>
             </div>
@@ -2297,13 +2343,13 @@ function AdminPage({ premiumPrice, onSetPremiumPrice, onSetPremium }) {
     <div>
       <div className="row-between mb-24">
         <div>
-          <div className="section-title">⚙️ Administração</div>
+          <div className="section-title" style={{display:"flex",alignItems:"center",gap:8}}><Settings size={20}/> Administração</div>
           <div className="text-muted text-sm">Gerencie usuários premium e configurações</div>
         </div>
       </div>
 
       <div className="card mb-24">
-        <div className="card-header"><div className="card-title">💰 Preço do Plano Premium</div></div>
+        <div className="card-header"><div className="card-title"><Wallet size={15}/> Preço do Plano Premium</div></div>
         <div className="card-body">
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', maxWidth: 320 }}>
             <div style={{ fontSize: 13, color: 'var(--mu2)', flexShrink: 0 }}>R$</div>
@@ -2321,7 +2367,7 @@ function AdminPage({ premiumPrice, onSetPremiumPrice, onSetPremium }) {
 
       <div className="card">
         <div className="card-header">
-          <div className="card-title">⭐ Gerenciar Premium</div>
+          <div className="card-title"><Star size={15}/> Gerenciar Premium</div>
           <span className="badge badge-yellow">{users.filter(u => u.is_premium).length} premium</span>
         </div>
         <div className="card-body" style={{ paddingBottom: 0 }}>
@@ -2371,9 +2417,41 @@ function AdminPage({ premiumPrice, onSetPremiumPrice, onSetPremium }) {
   );
 }
 
+// ─── DEV PREVIEW MODE ────────────────────────────────────────────────────────
+// Só funciona em `npm start` (nunca no build de produção) e só quando a URL
+// tem ?preview=<papel>, ex: http://localhost:3000/?preview=atleta
+// Serve para visualizar qualquer um dos 6 dashboards com dados fictícios,
+// sem precisar de login real nem tocar no banco de produção.
+function buildPreviewData(role) {
+  const profile = {
+    id: 'preview-user', role, name: role === 'empresa' ? 'Nike Brasil' : role === 'clube' ? 'Clube Atlético Central' : 'John Silva',
+    bio: 'Perfil de demonstração (modo preview).', location: 'São Paulo, SP', sport: 'Atletismo',
+    avatar: null, followers: 342, engagement: 0, is_premium: false, is_admin: false,
+  };
+  const athletes = Array.from({ length: 6 }, (_, i) => ({
+    id: `prev-ath-${i}`, name: ['Ze Roberto', 'Marina Alves', 'Rafael Souza', 'Ana Beatriz', 'Lucas Lima', 'Carla Dias'][i],
+    sport: ['Atletismo', 'Natação', 'Judô', 'Ciclismo de Estrada', 'Futebol', 'Vôlei'][i],
+    location: 'São Paulo, SP', avatar: null, followers: 120 + i * 40, role: 'atleta',
+  }));
+  return {
+    user: { id: 'preview-user' },
+    profile,
+    posts: [{ id: 'p1', author: 'Ze Roberto', avatar: null, sport: 'Atletismo', authorRole: 'atleta', time: '2h', content: 'Fechando a semana de treinos com recorde pessoal nos 400m!', likes: 12, author_id: 'prev-ath-0' }],
+    athletes,
+    sponsorships: [{ id: 's1', athlete_id: 'preview-user', sponsor_id: 'comp-1', athlete: 'John Silva', sponsor: 'Nike Brasil', title: 'Patrocínio Anual', value: 24000, status: 'active' }],
+    campaigns: [{ id: 'c1', athlete_id: 'preview-user', athlete: 'John Silva', avatar: null, title: 'Rumo ao Pan-Americano', goal: 20000, raised: 8500, deadline: '30/12/2026' }],
+    services: [{ id: 'sv1', provider_id: 'preview-user', category: 'Fisioterapia Esportiva', title: 'Avaliação física completa', price: 250, rating: 4.8, reviews: 14 }],
+    companies: [{ id: 'comp-1', name: 'Nike Brasil', followers: 5000 }],
+  };
+}
+
 // ─── MAIN APP ────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const isPreview = process.env.NODE_ENV !== 'production' &&
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('preview');
+  const previewRole = isPreview ? (new URLSearchParams(window.location.search).get('preview') || 'atleta') : null;
+
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -2404,6 +2482,16 @@ export default function App() {
 
   // ── Session management ────────────────────────────────────────────────────
   useEffect(() => {
+    if (isPreview) {
+      const mock = buildPreviewData(previewRole);
+      setUser(mock.user); setProfile(mock.profile);
+      setPosts(mock.posts); setAthletes(mock.athletes); setSponsorships(mock.sponsorships);
+      setCampaigns(mock.campaigns); setServices(mock.services); setCompanies(mock.companies);
+      setAllProfiles(mock.athletes);
+      loadedUserRef.current = mock.user.id;
+      setAuthLoading(false);
+      return;
+    }
     api.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
@@ -2723,28 +2811,31 @@ export default function App() {
 
           <nav className="sidebar-nav">
             <div className="nav-section-label">Menu</div>
-            {roleNav.map(item => (
-              <button key={item.key}
-                className={`nav-item ${page === item.key ? 'active' : ''}`}
-                onClick={() => setPage(item.key)}>
-                <span className="nav-icon">{item.icon}</span>
-                {item.label}
-                {item.key === 'sponsorships' && pendingSpons > 0 && (
-                  <span className="nav-badge">{pendingSpons}</span>
-                )}
-              </button>
-            ))}
+            {roleNav.map(item => {
+              const NavIcon = NAV_ICONS[item.key] || LayoutGrid;
+              return (
+                <button key={item.key}
+                  className={`nav-item ${page === item.key ? 'active' : ''}`}
+                  onClick={() => setPage(item.key)}>
+                  <NavIcon size={17} strokeWidth={2.2} className="nav-icon" />
+                  {item.label}
+                  {item.key === 'sponsorships' && pendingSpons > 0 && (
+                    <span className="nav-badge">{pendingSpons}</span>
+                  )}
+                </button>
+              );
+            })}
           </nav>
 
           <div className="sidebar-bottom">
             {profile?.is_admin && (
               <button className={`nav-item ${page === 'admin' ? 'active' : ''}`} onClick={() => setPage('admin')}>
-                <span className="nav-icon">⚙️</span>
+                <Settings size={17} strokeWidth={2.2} className="nav-icon" />
                 Administração
               </button>
             )}
             <button className="nav-item" onClick={handleLogout}>
-              <span className="nav-icon">⎋</span>
+              <LogOut size={17} strokeWidth={2.2} className="nav-icon" />
               Sair
             </button>
           </div>
@@ -2755,11 +2846,12 @@ export default function App() {
           <div className="topbar">
             <div className="topbar-title">{pageTitle}</div>
             <div className="topbar-search">
-              <span style={{ color: 'var(--mu)', fontSize: 14 }}>🔍</span>
+              <Search size={15} strokeWidth={2.2} style={{ color: 'var(--mu)', flexShrink: 0 }} />
               <input placeholder="Buscar atletas, serviços..." />
             </div>
             <div className="topbar-notif-wrap">
-              <button className="topbar-btn" title="Notificações" onClick={handleOpenNotifications}>🔔
+              <button className="topbar-btn" title="Notificações" onClick={handleOpenNotifications}>
+                <Bell size={17} strokeWidth={2.2} />
                 {(notifications.filter(n => !n.read).length + friendRequests.length) > 0 && (
                   <span className="notif-count">{notifications.filter(n => !n.read).length + friendRequests.length}</span>
                 )}
@@ -2777,7 +2869,7 @@ export default function App() {
                 />
               )}
             </div>
-            <button className="topbar-btn" title="Config" onClick={() => setPage('profile')}>⚙</button>
+            <button className="topbar-btn" title="Config" onClick={() => setPage('profile')}><Settings size={17} strokeWidth={2.2} /></button>
           </div>
 
           <div className="content">
