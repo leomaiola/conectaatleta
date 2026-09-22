@@ -7,6 +7,7 @@ import {
   User, Settings, LogOut, Search, Bell, Users, Flame, Trophy, Wallet, Star, Package,
   Megaphone, Building2, Shield, Camera, HeartHandshake, Dumbbell, X,
   CheckCircle2, Clock, Target, Lock, Zap, Link2, FileText, CalendarDays, AlertTriangle,
+  MapPin, Video, Medal, Activity, Rocket, BarChart3, Sparkles,
 } from "lucide-react";
 
 const NAV_ICONS = {
@@ -410,6 +411,8 @@ const styles = `
   /* ── COMMENTS ── */
   .comments-section { padding-top: 10px; border-top: 1px solid var(--bd); margin-top: 8px; }
   .comment-item { display: flex; gap: 8px; margin-bottom: 10px; }
+  .comment-bubble.is-other { background: var(--g3); border: 1px solid rgba(16,185,129,0.25); }
+  .comment-bubble.is-other .comment-author { color: var(--g2); }
   .comment-avatar { width: 28px; height: 28px; border-radius: 8px; background: var(--grad); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
   .comment-bubble { flex: 1; background: var(--bk); border-radius: 10px; padding: 8px 12px; }
   .comment-author { font-size: 11px; font-weight: 700; color: var(--tx); margin-bottom: 2px; }
@@ -422,7 +425,7 @@ const styles = `
   .chart-bar-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 3px; height: 100%; justify-content: flex-end; }
   .chart-bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 3px; transition: height 0.4s; }
   .chart-label { font-size: 8px; color: var(--mu); font-weight: 600; text-align: center; }
-  .medal-dot { font-size: 10px; text-align: center; }
+  .medal-dot { width: 6px; height: 6px; border-radius: 50%; background: #F59E0B; margin: 0 auto 3px; }
 
   /* ── EMPRESA DO ESPORTE ── */
   .empresa-widget { background: linear-gradient(135deg, var(--sb), #1E293B); border-radius: 16px; padding: 20px; margin-bottom: 14px; position: relative; overflow: hidden; }
@@ -521,12 +524,12 @@ function ConnectButton({ targetId, currentUserId, friends, sentRequests, friendR
     </div>
   );
   if (sentStatus === 'pending') return (
-    <button className={`${cls} btn-ghost`} disabled style={{ opacity: 0.6 }}>⏳ Aguardando</button>
+    <button className={`${cls} btn-ghost`} disabled style={{ opacity: 0.6 }}><Clock size={13}/> Aguardando</button>
   );
   return (
     <button className={`${cls} btn-ghost`} style={{ borderColor: 'var(--bl)', color: 'var(--bl)' }}
       onClick={() => onSendRequest?.(targetId)}>
-      🤝 Conectar
+      <Handshake size={13}/> Conectar
     </button>
   );
 }
@@ -570,11 +573,13 @@ function getLast12MonthsData(results) {
 
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
 
-function Toast({ msg, onClose }) {
+function Toast({ msg, type = 'success', onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
+  const ToastIcon = type === 'error' ? AlertTriangle : type === 'info' ? Lock : CheckCircle2;
+  const iconColor = type === 'error' ? '#F87171' : type === 'info' ? '#93C5FD' : '#6EE7B7';
   return (
     <div className="toast">
-      <span className="toast-icon">✅</span>
+      <ToastIcon size={17} style={{ color: iconColor, flexShrink: 0 }} />
       <span>{msg}</span>
     </div>
   );
@@ -868,7 +873,7 @@ function Dashboard({ profile, user, sponsorships, campaigns, posts, athletes, se
                 <div className="post-content" style={{ marginBottom: 0 }}>{post.content.substring(0, 100)}...</div>
               </div>
             ))}
-            {posts.length === 0 && <div className="empty-state"><div className="empty-icon">📋</div><div className="empty-text">Nenhum post ainda</div></div>}
+            {posts.length === 0 && <div className="empty-state"><div className="empty-icon"><Rss size={48}/></div><div className="empty-text">Nenhum post ainda</div></div>}
           </div>
         </div>
 
@@ -945,7 +950,7 @@ function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, 
 
       <div className="row mb-16" style={{ flexWrap: 'wrap', gap: 8 }}>
         <input className="form-input" style={{ maxWidth: 260 }}
-          placeholder="🔍  Buscar atleta..."
+          placeholder="Buscar atleta..."
           value={search} onChange={e => setSearch(e.target.value)} />
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {sports.map(s => (
@@ -959,7 +964,7 @@ function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, 
 
       {filtered.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-icon">🏃</div>
+          <div className="empty-icon"><Users size={48}/></div>
           <div className="empty-title">Nenhum atleta encontrado</div>
           <div className="empty-text">Tente ajustar os filtros de busca.</div>
         </div>
@@ -972,7 +977,7 @@ function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, 
                 {a.sport && <div className="athlete-sport-badge">{a.sport}</div>}
               </div>
               <div className="athlete-name">{a.name}</div>
-              {a.location && <div className="athlete-location">📍 {a.location}</div>}
+              {a.location && <div className="athlete-location" style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={11}/> {a.location}</div>}
               <div className="athlete-metrics">
                 <div className="metric">
                   <div className="metric-val">{(a.followers || 0) >= 1000 ? `${((a.followers || 0) / 1000).toFixed(1)}K` : (a.followers || 0)}</div>
@@ -987,7 +992,7 @@ function AthletesPage({ athletes, onShowModal, following, onFollow, onUnfollow, 
                 <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => onViewProfile(a)}>Ver Perfil</button>
                 {currentUserId !== a.id && (
                   <>
-                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g)', borderColor: 'var(--g)' }} onClick={() => onOpenChat?.(a.id)}>💬</button>
+                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g)', borderColor: 'var(--g)' }} onClick={() => onOpenChat?.(a.id)}><MessageCircle size={14}/></button>
                     <ConnectButton targetId={a.id} currentUserId={currentUserId}
                       friends={friends} sentRequests={sentRequests} friendRequests={friendRequests}
                       onSendRequest={onSendRequest} onRespondRequest={onRespondRequest} onRemoveConnection={onRemoveConnection} />
@@ -1028,7 +1033,7 @@ function SponsorshipsPage({ sponsorships, userId, onShowModal, onOpenChat }) {
       <div className="card">
         <div className="card-header"><div className="card-title"><Rss size={15}/> Meus Patrocínios</div></div>
         {mine.length === 0 ? (
-          <div className="empty-state"><div className="empty-icon">🤝</div><div className="empty-title">Nenhum patrocínio ainda</div><div className="empty-text">Crie uma proposta para começar.</div></div>
+          <div className="empty-state"><div className="empty-icon"><Handshake size={48}/></div><div className="empty-title">Nenhum patrocínio ainda</div><div className="empty-text">Crie uma proposta para começar.</div></div>
         ) : (
           <table className="table">
             <thead><tr><th>Patrocínio</th><th>Atleta</th><th>Patrocinador</th><th>Valor/ano</th><th>Contrapartidas</th><th>Status</th><th></th></tr></thead>
@@ -1043,7 +1048,7 @@ function SponsorshipsPage({ sponsorships, userId, onShowModal, onOpenChat }) {
                     <td><span className="text-mono text-green" style={{ fontSize: 13 }}>R${Number(s.value || 0).toLocaleString()}</span></td>
                     <td><span style={{ fontSize: 12, color: 'var(--mu2)' }}>{s.contrapartidas}</span></td>
                     <td><span className={`badge ${statusColor[s.status] || 'badge-muted'}`}>{statusLabel[s.status] || s.status}</span></td>
-                    <td>{contactId && <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g)', borderColor: 'var(--g)' }} onClick={() => onOpenChat?.(contactId)}>💬 Contatar</button>}</td>
+                    <td>{contactId && <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g)', borderColor: 'var(--g)' }} onClick={() => onOpenChat?.(contactId)}><MessageCircle size={13}/> Contatar</button>}</td>
                   </tr>
                 );
               })}
@@ -1093,7 +1098,7 @@ function MarketplacePage({ services, onShowModal, userRole, serviceRequests, onO
           <div className="text-muted text-sm">Encontre os melhores profissionais especializados</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {isAtleta && <button className="btn btn-ghost" onClick={() => onShowModal('requestProfessional')}>🔍 Solicitar Profissional</button>}
+          {isAtleta && <button className="btn btn-ghost" onClick={() => onShowModal('requestProfessional')}><Search size={14}/> Solicitar Profissional</button>}
           {isProfissional && <button className="btn btn-primary" onClick={() => onShowModal('addService')}>+ Oferecer Serviço</button>}
         </div>
       </div>
@@ -1110,7 +1115,7 @@ function MarketplacePage({ services, onShowModal, userRole, serviceRequests, onO
       {tab === 'requests' && (
         <div>
           {serviceRequests.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">🔍</div><div className="empty-title">Nenhuma solicitação ainda</div><div className="empty-text">Atletas ainda não fizeram pedidos de profissionais.</div></div>
+            <div className="empty-state"><div className="empty-icon"><Search size={48}/></div><div className="empty-title">Nenhuma solicitação ainda</div><div className="empty-text">Atletas ainda não fizeram pedidos de profissionais.</div></div>
           ) : serviceRequests.map(sr => (
             <div key={sr.id} className="card mb-16" style={{ cursor: 'default' }}>
               <div className="card-body">
@@ -1118,7 +1123,7 @@ function MarketplacePage({ services, onShowModal, userRole, serviceRequests, onO
                   <Avatar src={sr.athlete?.avatar} name={sr.athlete?.name} size={44} radius={12} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{sr.athlete?.name || 'Atleta'} busca <span style={{ color: 'var(--g)' }}>{sr.category}</span></div>
-                    {sr.city && <div style={{ fontSize: 12, color: 'var(--mu2)', marginBottom: 6 }}>📍 {sr.city}{sr.state ? `, ${sr.state}` : ''}</div>}
+                    {sr.city && <div style={{ fontSize: 12, color: 'var(--mu2)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12}/> {sr.city}{sr.state ? `, ${sr.state}` : ''}</div>}
                     {sr.description && <div style={{ fontSize: 13, color: 'var(--mu2)', lineHeight: 1.6 }}>{sr.description}</div>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
@@ -1129,7 +1134,7 @@ function MarketplacePage({ services, onShowModal, userRole, serviceRequests, onO
                         style={{ whiteSpace: 'nowrap' }}
                         onClick={() => onOpenChat?.(sr.athlete_id)}
                       >
-                        💬 Entrar em contato
+                        <MessageCircle size={13}/> Entrar em contato
                       </button>
                     )}
                   </div>
@@ -1152,7 +1157,7 @@ function MarketplacePage({ services, onShowModal, userRole, serviceRequests, onO
       </div>
 
       {filtered.length === 0 ? (
-        <div className="empty-state"><div className="empty-icon">🩺</div><div className="empty-title">Nenhum serviço encontrado</div><div className="empty-text">Seja o primeiro a oferecer um serviço!</div></div>
+        <div className="empty-state"><div className="empty-icon"><Stethoscope size={48}/></div><div className="empty-title">Nenhum serviço encontrado</div><div className="empty-text">Seja o primeiro a oferecer um serviço!</div></div>
       ) : (
         <div className="grid-3">
           {filtered.map(s => (
@@ -1172,7 +1177,7 @@ function MarketplacePage({ services, onShowModal, userRole, serviceRequests, onO
                 <div style={{ display: 'flex', gap: 6 }}>
                   {s.provider_id !== currentUserId && (
                     <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g)', borderColor: 'var(--g)' }}
-                      onClick={() => onOpenChat?.(s.provider_id)}>💬</button>
+                      onClick={() => onOpenChat?.(s.provider_id)}><MessageCircle size={14}/></button>
                   )}
                   <button className="btn btn-primary btn-sm" onClick={() => onShowModal('bookService', s)}>Contratar</button>
                 </div>
@@ -1208,7 +1213,7 @@ function CrowdfundingPage({ campaigns, onShowModal }) {
       </div>
 
       {campaigns.length === 0 ? (
-        <div className="empty-state"><div className="empty-icon">💰</div><div className="empty-title">Nenhuma campanha ainda</div><div className="empty-text">Seja o primeiro a criar uma campanha!</div></div>
+        <div className="empty-state"><div className="empty-icon"><Wallet size={48}/></div><div className="empty-title">Nenhuma campanha ainda</div><div className="empty-text">Seja o primeiro a criar uma campanha!</div></div>
       ) : (
         <div className="grid-3">
           {campaigns.map(c => {
@@ -1323,8 +1328,8 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
               <div className="row-between">
                 <div className="row" style={{ gap: 8 }}>
                   <input ref={mediaInputRef} type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={handleMediaSelect} />
-                  <button className="btn btn-ghost btn-sm" onClick={() => { mediaInputRef.current.accept='image/*'; mediaInputRef.current.click(); }}>📷 Foto</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => { mediaInputRef.current.accept='video/*'; mediaInputRef.current.click(); }}>🎥 Vídeo</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { mediaInputRef.current.accept='image/*'; mediaInputRef.current.click(); }}><Camera size={13}/> Foto</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { mediaInputRef.current.accept='video/*'; mediaInputRef.current.click(); }}><Video size={13}/> Vídeo</button>
                 </div>
                 <button className="btn btn-primary btn-sm" onClick={handlePublish} disabled={posting || (!newPost.trim() && !mediaFile)}>
                   {posting ? 'Publicando...' : 'Publicar'}
@@ -1336,7 +1341,7 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
       </div>
 
       {posts.length === 0 && (
-        <div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">Feed vazio</div><div className="empty-text">Seja o primeiro a publicar!</div></div>
+        <div className="empty-state"><div className="empty-icon"><Rss size={48}/></div><div className="empty-title">Feed vazio</div><div className="empty-text">Seja o primeiro a publicar!</div></div>
       )}
 
       {posts.length > 0 && <EmpresaDoEsporteWidget companies={companies || []} sponsorships={sponsorships || []} />}
@@ -1348,7 +1353,7 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
           <div key={post.id} className="feed-post" style={isEmpresa ? { borderColor: 'var(--bl)', background: 'linear-gradient(135deg,var(--d1) 0%,rgba(59,130,246,0.06) 100%)' } : {}}>
             {isEmpresa && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: 'var(--bl)', background: 'rgba(59,130,246,0.12)', borderRadius: 4, padding: '2px 8px', textTransform: 'uppercase' }}>🏢 Anúncio</span>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: 'var(--bl)', background: 'rgba(59,130,246,0.12)', borderRadius: 4, padding: '2px 8px', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Building2 size={11}/> Anúncio</span>
                 <span style={{ fontSize: 10, color: 'var(--mu)', marginLeft: 'auto' }}>Conteúdo patrocinado</span>
               </div>
             )}
@@ -1364,7 +1369,7 @@ function FeedPage({ profile, posts: allPosts, onCreatePost, onToggleLike, follow
               {!isOwn && (
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g)', borderColor: 'var(--g)' }}
-                    onClick={() => onOpenChat?.(post.author_id)}>💬</button>
+                    onClick={() => onOpenChat?.(post.author_id)}><MessageCircle size={15}/></button>
                   {following?.includes(post.author_id)
                     ? <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--g)', color: 'var(--g)' }} onClick={() => onUnfollow(post.author_id)}>✓ Seguindo</button>
                     : <button className="btn btn-ghost btn-sm" onClick={() => onFollow(post.author_id)}>+ Seguir</button>
@@ -1479,7 +1484,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
               </div>
             )}
           </div>
-          <button onClick={handleAvatarClick} style={{ position: 'absolute', bottom: -6, right: -6, width: 28, height: 28, borderRadius: '50%', background: 'var(--grad)', border: '2px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Trocar foto">📷</button>
+          <button onClick={handleAvatarClick} style={{ position: 'absolute', bottom: -6, right: -6, width: 28, height: 28, borderRadius: '50%', background: 'var(--grad)', border: '2px solid rgba(255,255,255,0.3)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Trocar foto"><Camera size={13}/></button>
         </div>
         <div className="profile-info">
           <div className="profile-name">{profile.name}</div>
@@ -1489,7 +1494,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
               {' '}{ROLES.find(r => r.key === profile.role)?.label}
             </span>
             {profile.sport && <span className="badge badge-muted">{profile.sport}</span>}
-            {profile.location && <span style={{ fontSize: 12, color: 'var(--mu2)' }}>📍 {profile.location}</span>}
+            {profile.location && <span style={{ fontSize: 12, color: 'var(--mu2)', display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={12}/> {profile.location}</span>}
           </div>
           <div className="profile-bio">{profile.bio || 'Adicione uma bio ao seu perfil para se apresentar à rede.'}</div>
           <div className="profile-socials">
@@ -1577,8 +1582,8 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
-                  { value: 'all', label: '🌎 Todas as modalidades', desc: 'Ver publicações de todos os atletas e usuários' },
-                  { value: 'sport', label: `🏅 Apenas ${profile.sport || 'minha modalidade'}`, desc: 'Ver apenas publicações da sua modalidade esportiva' },
+                  { value: 'all', label: <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Rss size={13}/> Todas as modalidades</span>, desc: 'Ver publicações de todos os atletas e usuários' },
+                  { value: 'sport', label: <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Medal size={13}/> Apenas {profile.sport || 'minha modalidade'}</span>, desc: 'Ver apenas publicações da sua modalidade esportiva' },
                 ].map(opt => (
                   <label key={opt.value} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: 14, borderRadius: 12, border: `1.5px solid ${form.feed_preference === opt.value ? 'var(--g)' : 'var(--bd)'}`, background: form.feed_preference === opt.value ? 'linear-gradient(135deg,#ECFDF5,#EFF6FF)' : 'var(--bk)', cursor: 'pointer', transition: 'all 0.15s' }}>
                     <input type="radio" name="feed_pref" value={opt.value} checked={form.feed_preference === opt.value} onChange={() => setForm(f => ({ ...f, feed_preference: opt.value }))} style={{ marginTop: 2 }} />
@@ -1601,7 +1606,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
               <p style={{ fontSize: 13, color: 'var(--mu2)', lineHeight: 1.6, marginBottom: 16 }}>
                 Gere automaticamente um mídia kit profissional com suas métricas consolidadas.
               </p>
-              <button className="btn btn-primary">🤖 Gerar Mídia Kit com IA</button>
+              <button className="btn btn-primary"><Sparkles size={14}/> Gerar Mídia Kit com IA</button>
             </div>
           </div>
         </div>
@@ -1624,7 +1629,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
       <div className="card mt-16">
         <div className="card-header">
           <div className="card-title"><Lock size={15}/> Privacidade e Visibilidade</div>
-          {profile.is_premium && <span className="badge badge-yellow">⭐ Premium</span>}
+          {profile.is_premium && <span className="badge badge-yellow"><Star size={11}/> Premium</span>}
         </div>
         <div className="card-body">
           <p style={{ fontSize: 13, color: 'var(--mu2)', lineHeight: 1.6, marginBottom: 16 }}>
@@ -1632,8 +1637,8 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
-              { value: 'public', label: '🌎 Perfil Público', desc: 'Qualquer pessoa pode ver seu perfil e enviar mensagens' },
-              { value: 'friends', label: '🤝 Apenas Conexões', desc: 'Somente suas conexões aceitas e usuários premium podem enviar mensagens' },
+              { value: 'public', label: <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Users size={13}/> Perfil Público</span>, desc: 'Qualquer pessoa pode ver seu perfil e enviar mensagens' },
+              { value: 'friends', label: <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Handshake size={13}/> Apenas Conexões</span>, desc: 'Somente suas conexões aceitas e usuários premium podem enviar mensagens' },
             ].map(opt => (
               <label key={opt.value} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: 14, borderRadius: 12, border: `1.5px solid ${form.visibility === opt.value ? 'var(--g)' : 'var(--bd)'}`, background: form.visibility === opt.value ? 'linear-gradient(135deg,#ECFDF5,#EFF6FF)' : 'var(--bk)', cursor: 'pointer', transition: 'all 0.15s' }}>
                 <input type="radio" name="visibility" value={opt.value} checked={form.visibility === opt.value} onChange={() => setForm(f => ({ ...f, visibility: opt.value }))} style={{ marginTop: 2 }} />
@@ -1684,14 +1689,19 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
           </div>
           <div className="card-body">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-              {['📢 Anunciar produtos e serviços no feed', '💬 Mensagens para qualquer atleta', '🚀 Destaque nos resultados de busca', '📊 Relatórios de engajamento avançados'].map(b => (
-                <div key={b} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'var(--mu2)' }}>
-                  <span style={{ color: '#F59E0B', marginTop: 1 }}>✓</span> {b}
+              {[
+                { icon: Megaphone, text: 'Anunciar produtos e serviços no feed' },
+                { icon: MessageCircle, text: 'Mensagens para qualquer atleta' },
+                { icon: Rocket, text: 'Destaque nos resultados de busca' },
+                { icon: BarChart3, text: 'Relatórios de engajamento avançados' },
+              ].map(({ icon: BenefitIcon, text }) => (
+                <div key={text} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'var(--mu2)' }}>
+                  <CheckCircle2 size={14} style={{ color: '#F59E0B', marginTop: 1, flexShrink: 0 }} /> {text}
                 </div>
               ))}
             </div>
             <button className="btn btn-primary" style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', borderColor: '#F59E0B' }}>
-              ⭐ Assinar Premium — R$ {premiumPrice}/mês
+              <Star size={14}/> Assinar Premium — R$ {premiumPrice}/mês
             </button>
             <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 8 }}>Pagamento via PIX ou cartão. Cancele quando quiser.</div>
           </div>
@@ -1740,7 +1750,7 @@ function ProfilePage({ profile, onUpdateProfile, premiumPrice, friendRequests, o
                 <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--tx)', marginBottom: 10 }}>Resultados registrados</div>
                 {results.map(r => (
                   <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--bd)' }}>
-                    <span style={{ fontSize: 18 }}>{r.medal === 'gold' ? '🥇' : r.medal === 'silver' ? '🥈' : r.medal === 'bronze' ? '🥉' : '🏅'}</span>
+                    <Medal size={18} style={{ flexShrink: 0, color: r.medal === 'gold' ? '#F59E0B' : r.medal === 'silver' ? '#94A3B8' : r.medal === 'bronze' ? '#B45309' : 'var(--mu)' }} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{r.event_name}</div>
                       <div style={{ fontSize: 11, color: 'var(--mu2)' }}>{r.event_date}{r.position ? ` · ${r.position}` : ''}</div>
@@ -1848,7 +1858,7 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
               <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Outfit',sans-serif", letterSpacing: -0.5, marginBottom: 4 }}>{athlete.name}</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
                 {athlete.sport && <span className="badge badge-green">{athlete.sport}</span>}
-                {athlete.location && <span style={{ fontSize: 12, color: '#94A3B8' }}>📍 {athlete.location}</span>}
+                {athlete.location && <span style={{ fontSize: 12, color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={12}/> {athlete.location}</span>}
               </div>
               {athlete.bio && <p style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.6, marginBottom: 14 }}>{athlete.bio}</p>}
               <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
@@ -1858,7 +1868,7 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
               {currentUserId !== athlete.id && (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g4)', borderColor: 'var(--g4)' }}
-                    onClick={() => onOpenChat?.(athlete.id)}>💬 Mensagem</button>
+                    onClick={() => onOpenChat?.(athlete.id)}><MessageCircle size={13}/> Mensagem</button>
                   {isFollowing
                     ? <button className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--g4)', color: 'var(--g4)', background: 'rgba(110,231,183,0.1)' }} onClick={() => onUnfollow(athlete.id)}>✓ Seguindo</button>
                     : <button className="btn btn-primary btn-sm" onClick={() => onFollow(athlete.id)}>+ Seguir</button>
@@ -1881,8 +1891,8 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
 
           {/* ── Resultados dos últimos 12 meses ── */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Outfit',sans-serif", marginBottom: 14 }}>
-              🏆 Resultados — Últimos 12 meses
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Outfit',sans-serif", marginBottom: 14, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <Trophy size={15}/> Resultados — Últimos 12 meses
             </div>
             {loading ? (
               <div style={{ textAlign: 'center', padding: 24, color: 'var(--mu)' }}>Carregando...</div>
@@ -1895,15 +1905,15 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
                 <ResultsChart results={athleteResults} />
                 <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {athleteResults.slice(0, 8).map(r => {
-                    const medalEmoji = { gold: '🥇', silver: '🥈', bronze: '🥉' }[r.medal] || '🎽';
+                    const medalColor = { gold: '#F59E0B', silver: '#94A3B8', bronze: '#B45309' }[r.medal] || 'var(--mu)';
                     return (
                       <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--bk)', borderRadius: 10, border: '1px solid var(--bd)' }}>
-                        <span style={{ fontSize: 22, flexShrink: 0 }}>{medalEmoji}</span>
+                        <Medal size={22} style={{ flexShrink: 0, color: medalColor }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--tx)', marginBottom: 2 }}>{r.event_name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--mu2)' }}>
-                            {r.position && <span style={{ marginRight: 8 }}>🎯 {r.position}</span>}
-                            <span>📅 {new Date(r.event_date).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}</span>
+                          <div style={{ fontSize: 11, color: 'var(--mu2)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            {r.position && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Target size={11}/> {r.position}</span>}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><CalendarDays size={11}/> {new Date(r.event_date).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}</span>
                           </div>
                           {r.description && <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 2 }}>{r.description}</div>}
                         </div>
@@ -1917,12 +1927,12 @@ function AthleteProfileView({ athlete, following, onFollow, onUnfollow, currentU
 
           {/* ── Publicações ── */}
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Outfit',sans-serif", marginBottom: 14 }}>
-              📋 Publicações
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', fontFamily: "'Outfit',sans-serif", marginBottom: 14, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <Rss size={15}/> Publicações
             </div>
             {loading ? null : posts.length === 0 ? (
               <div className="empty-state" style={{ padding: '24px 0' }}>
-                <div className="empty-icon">📋</div>
+                <div className="empty-icon"><Rss size={48}/></div>
                 <div className="empty-title">Nenhuma publicação ainda</div>
               </div>
             ) : posts.map(post => (
@@ -1949,7 +1959,7 @@ function ResultsChart({ results }) {
       <div className="chart-bar-row">
         {data.map((d, i) => (
           <div key={i} className="chart-bar-wrap">
-            {d.medals > 0 && <div className="medal-dot">{'🥇'.slice(0, d.medals > 0 ? 1 : 0)}</div>}
+            {d.medals > 0 && <div className="medal-dot" title={`${d.medals} medalha(s)`} />}
             <div className="chart-bar" style={{
               height: `${(d.events / maxEvents) * 100}%`,
               background: d.events > 0 ? 'var(--grad)' : 'var(--bd)',
@@ -1999,22 +2009,25 @@ function CommentsSection({ postId, currentUserId, currentUserAvatar, currentUser
   return (
     <div onClick={e => e.stopPropagation()}>
       <button className="post-action" onClick={toggle}>
-        💬 {comments.length > 0 ? `${comments.length} ` : ''}Comentar
+        <MessageCircle size={13}/> {comments.length > 0 ? `${comments.length} ` : ''}Comentar
       </button>
       {open && (
         <div className="comments-section">
           {comments.length === 0 && !loading && (
             <div style={{ fontSize: 12, color: 'var(--mu)', textAlign: 'center', padding: '8px 0' }}>Nenhum comentário ainda. Seja o primeiro!</div>
           )}
-          {comments.map(c => (
-            <div key={c.id} className="comment-item">
-              <Avatar src={c.author?.avatar} name={c.author?.name} size={30} radius={8} />
-              <div className="comment-bubble">
-                <div className="comment-author">{c.author?.name || 'Usuário'}</div>
-                <div className="comment-text">{c.content}</div>
+          {comments.map(c => {
+            const isOther = c.author_id !== currentUserId;
+            return (
+              <div key={c.id} className="comment-item">
+                <Avatar src={c.author?.avatar} name={c.author?.name} size={30} radius={8} />
+                <div className={`comment-bubble${isOther ? ' is-other' : ''}`}>
+                  <div className="comment-author">{isOther ? (c.author?.name || 'Usuário') : 'Você'}</div>
+                  <div className="comment-text">{c.content}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           <div className="comment-input-row">
             <Avatar src={currentUserAvatar} name={currentUserName} size={30} radius={8} />
             <input className="form-input" style={{ flex: 1, padding: '8px 12px', borderRadius: 10, fontSize: 13 }}
@@ -2038,14 +2051,14 @@ function EmpresaDoEsporteWidget({ companies, sponsorships }) {
   if (!empresa) return null;
   return (
     <div className="empresa-widget">
-      <div className="empresa-crown">🏆 Empresa do Esporte</div>
+      <div className="empresa-crown" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={13}/> Empresa do Esporte</div>
       <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
         <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
-          {empresa.avatar || '🏢'}
+          {empresa.avatar || <Building2 size={22}/>}
         </div>
         <div>
           <div className="empresa-name">{empresa.name}</div>
-          {empresa.location && <div style={{ fontSize: 11, color: '#64748B' }}>📍 {empresa.location}</div>}
+          {empresa.location && <div style={{ fontSize: 11, color: '#64748B', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={11}/> {empresa.location}</div>}
         </div>
       </div>
       <div className="empresa-stats">
@@ -2167,7 +2180,7 @@ function MessagesPage({ profile, allProfiles, initialContact, onClearInitial }) 
           </div>
         ) : (
           <div className="chat-empty">
-            <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
+            <div style={{ marginBottom: 12, opacity: 0.35, display: 'flex', justifyContent: 'center' }}><MessageCircle size={40}/></div>
             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--mu2)' }}>Selecione uma conversa</div>
             <div style={{ fontSize: 12, color: 'var(--mu)', marginTop: 4 }}>ou inicie uma nova acima</div>
           </div>
@@ -2397,7 +2410,7 @@ function AdminPage({ premiumPrice, onSetPremiumPrice, onSetPremium }) {
                   <td><span className="badge badge-muted">{u.role}</span></td>
                   <td>
                     {u.is_premium
-                      ? <span className="badge badge-yellow">⭐ Premium</span>
+                      ? <span className="badge badge-yellow"><Star size={11}/> Premium</span>
                       : <span className="badge badge-muted">Gratuito</span>}
                   </td>
                   <td>
@@ -2410,7 +2423,7 @@ function AdminPage({ premiumPrice, onSetPremiumPrice, onSetPremium }) {
                       className={`btn btn-sm ${u.is_premium ? 'btn-ghost' : 'btn-primary'}`}
                       style={u.is_premium ? { color: 'var(--rd)', borderColor: 'var(--rd2)' } : { background: 'linear-gradient(135deg,#F59E0B,#D97706)', borderColor: '#F59E0B' }}
                       onClick={() => toggle(u)}>
-                      {u.is_premium ? 'Remover Premium' : '⭐ Ativar Premium'}
+                      {u.is_premium ? 'Remover Premium' : <><Star size={13}/> Ativar Premium</>}
                     </button>
                   </td>
                 </tr>
@@ -2608,7 +2621,7 @@ export default function App() {
     const { data, error } = await api.updateProfile(user.id, safeUpdates);
     if (error) {
       console.error('updateProfile failed:', error);
-      showToast(`❌ Não foi possível salvar: ${error.message || 'erro desconhecido'}`);
+      showToast(`Não foi possível salvar: ${error.message || 'erro desconhecido'}`, 'error');
       return;
     }
     if (data) {
@@ -2617,7 +2630,7 @@ export default function App() {
       if (data.role === 'atleta') {
         setAthletes(prev => prev.map(a => a.id === user.id ? { ...a, ...data } : a));
       }
-      showToast('✅ Perfil atualizado!');
+      showToast('Perfil atualizado!');
     }
   };
 
@@ -2705,7 +2718,7 @@ export default function App() {
       return true;
     } catch (e) {
       console.error('handleModalSave:', e);
-      showToast('❌ Erro ao salvar. Tente novamente.');
+      showToast('Erro ao salvar. Tente novamente.', 'error');
       return false;
     }
   };
@@ -2720,7 +2733,7 @@ export default function App() {
   };
 
   const showModal = useCallback((type, data) => setModal({ type, data }), []);
-  const showToast = useCallback((msg) => setToast(msg), []);
+  const showToast = useCallback((msg, type = 'success') => setToast({ msg, type }), []);
 
   const openChat = useCallback((userId) => {
     const target = allProfiles.find(p => p.id === userId);
@@ -2729,7 +2742,7 @@ export default function App() {
       const isFriend = friends.includes(userId);
       const amIPremium = profile?.is_premium;
       if (!isFriend && !amIPremium) {
-        showToast('🔒 Este usuário só aceita mensagens de conexões ou usuários premium.');
+        showToast('Este usuário só aceita mensagens de conexões ou usuários premium.', 'info');
         return;
       }
     }
@@ -2743,9 +2756,9 @@ export default function App() {
     const { error } = await api.sendConnectionRequest(user.id, targetId);
     if (error) {
       setSentRequests(prev => { const n = { ...prev }; delete n[targetId]; return n; });
-      showToast('❌ Erro ao enviar convite.');
+      showToast('Erro ao enviar convite.', 'error');
     } else {
-      showToast('✅ Convite enviado!');
+      showToast('Convite enviado!');
     }
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -2756,7 +2769,7 @@ export default function App() {
     if (accept && data?.requester) {
       setFriends(prev => [...prev, requesterId]);
       setSentRequests(prev => ({ ...prev, [requesterId]: 'accepted' }));
-      showToast(`✅ Você e ${data.requester.name} agora são conexões!`);
+      showToast(`Você e ${data.requester.name} agora são conexões!`);
     } else {
       showToast('Convite recusado.');
     }
@@ -2954,8 +2967,8 @@ export default function App() {
             {page === 'admin' && profile?.is_admin && (
               <AdminPage
                 premiumPrice={premiumPrice}
-                onSetPremiumPrice={async (p) => { await api.setPremiumPrice(p); setPremiumPrice(p); showToast('✅ Preço atualizado!'); }}
-                onSetPremium={async (uid, val) => { const { data } = await api.setUserPremium(uid, val); if (data) showToast(val ? '⭐ Premium ativado!' : 'Premium removido.'); }}
+                onSetPremiumPrice={async (p) => { await api.setPremiumPrice(p); setPremiumPrice(p); showToast('Preço atualizado!'); }}
+                onSetPremium={async (uid, val) => { const { data } = await api.setUserPremium(uid, val); if (data) showToast(val ? 'Premium ativado!' : 'Premium removido.'); }}
               />
             )}
           </div>
@@ -2985,7 +2998,7 @@ export default function App() {
         />
       )}
 
-      {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </>
   );
 }
