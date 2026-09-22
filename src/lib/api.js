@@ -186,7 +186,9 @@ export const api = {
       .select('raised')
       .eq('id', campaignId)
       .single()
-    const newRaised = (camp?.raised || 0) + Number(amount)
+    // Supabase returns `numeric` columns as strings — without Number() here,
+    // "8500" + 500 concatenates to "8500500" instead of adding to 9000.
+    const newRaised = Number(camp?.raised || 0) + Number(amount)
     const { error } = await supabase
       .from('campaigns')
       .update({ raised: newRaised })

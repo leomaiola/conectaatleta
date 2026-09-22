@@ -749,7 +749,7 @@ function AuthScreen({ onLogin }) {
 function DashboardAtleta({ profile, sponsorships, campaigns }) {
   const mySpons = sponsorships.filter(s => s.athlete_id === profile.id);
   const active = mySpons.filter(s => s.status === 'active').length;
-  const myRaised = campaigns.filter(c => c.athlete_id === profile.id).reduce((sum, c) => sum + (c.raised || 0), 0);
+  const myRaised = campaigns.filter(c => c.athlete_id === profile.id).reduce((sum, c) => sum + Number(c.raised || 0), 0);
 
   return (
     <div className="stat-grid">
@@ -786,7 +786,7 @@ function DashboardAtleta({ profile, sponsorships, campaigns }) {
 function DashboardEmpresa({ profile, sponsorships, athletes }) {
   const mySpons = sponsorships.filter(s => s.sponsor_id === profile.id);
   const active = mySpons.filter(s => s.status === 'active').length;
-  const total = mySpons.reduce((sum, s) => sum + (s.value || 0), 0);
+  const total = mySpons.reduce((sum, s) => sum + Number(s.value || 0), 0);
   const reach = mySpons.reduce((_, s) => {
     const a = athletes.find(at => at.id === s.athlete_id);
     return a ? a.followers || 0 : 0;
@@ -806,7 +806,7 @@ function DashboardEmpresa({ profile, sponsorships, athletes }) {
           <table className="table"><thead><tr><th>Atleta</th><th>Valor/ano</th><th>Status</th></tr></thead>
           <tbody>{mySpons.slice(0, 5).map(s => (
             <tr key={s.id}><td><div style={{ fontWeight: 600, fontSize: 13 }}>{s.athlete}</div></td>
-            <td><span style={{ fontFamily: 'DM Mono', color: 'var(--g2)', fontSize: 13 }}>R${(s.value || 0).toLocaleString()}</span></td>
+            <td><span style={{ fontFamily: 'DM Mono', color: 'var(--g2)', fontSize: 13 }}>R${Number(s.value || 0).toLocaleString()}</span></td>
             <td><span className={`badge ${s.status === 'active' ? 'badge-green' : 'badge-yellow'}`}>{s.status === 'active' ? 'Ativo' : 'Pendente'}</span></td></tr>
           ))}</tbody></table>
         </div>
@@ -838,7 +838,7 @@ function Dashboard({ profile, user, sponsorships, campaigns, posts, athletes, se
     totalAthletes: athletes.length,
     activeSponsorships: sponsorships.filter(s => s.status === 'active').length,
     servicesCount: services.length,
-    raised: campaigns.reduce((sum, c) => sum + (c.raised || 0), 0),
+    raised: campaigns.reduce((sum, c) => sum + Number(c.raised || 0), 0),
   };
 
   return (
@@ -883,7 +883,7 @@ function Dashboard({ profile, user, sponsorships, campaigns, posts, athletes, se
                 <tbody>{sponsorships.filter(s => s.athlete_id === user?.id || s.sponsor_id === user?.id).slice(0, 3).map(s => (
                   <tr key={s.id}>
                     <td><div style={{ fontWeight: 600, fontSize: 13 }}>{s.sponsor}</div><div style={{ fontSize: 11, color: 'var(--mu2)' }}>{s.title}</div></td>
-                    <td><span className="text-mono text-green" style={{ fontSize: 13 }}>R${(s.value || 0).toLocaleString()}</span></td>
+                    <td><span className="text-mono text-green" style={{ fontSize: 13 }}>R${Number(s.value || 0).toLocaleString()}</span></td>
                     <td><span className={`badge ${s.status === 'active' ? 'badge-green' : 'badge-yellow'}`}>{s.status === 'active' ? 'Ativo' : 'Pendente'}</span></td>
                   </tr>
                 ))}</tbody></table>
@@ -907,7 +907,7 @@ function Dashboard({ profile, user, sponsorships, campaigns, posts, athletes, se
                     </div>
                     <div className="progress-wrap"><div className="progress-bar" style={{ width: `${pct}%` }} /></div>
                     <div className="row-between mt-4">
-                      <span style={{ fontSize: 10, color: 'var(--mu2)' }}>R${(c.raised || 0).toLocaleString()} de R${(c.goal || 0).toLocaleString()}</span>
+                      <span style={{ fontSize: 10, color: 'var(--mu2)' }}>R${Number(c.raised || 0).toLocaleString()} de R${Number(c.goal || 0).toLocaleString()}</span>
                       <span style={{ fontSize: 10, color: 'var(--mu)' }}>até {c.deadline}</span>
                     </div>
                   </div>
@@ -1022,7 +1022,7 @@ function SponsorshipsPage({ sponsorships, userId, onShowModal, onOpenChat }) {
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 24 }}>
         <div className="stat-card green"><div className="stat-icon-wrap green"><CheckCircle2 size={20} className="stat-icon"/></div><div className="stat-value">{mine.filter(s => s.status === 'active').length}</div><div className="stat-label">Ativos</div></div>
         <div className="stat-card yellow"><div className="stat-icon-wrap orange"><Clock size={20} className="stat-icon"/></div><div className="stat-value">{mine.filter(s => s.status === 'pending').length}</div><div className="stat-label">Pendentes</div></div>
-        <div className="stat-card orange"><div className="stat-icon-wrap orange"><Wallet size={20} className="stat-icon"/></div><div className="stat-value">R${mine.reduce((a, s) => a + (s.value || 0), 0).toLocaleString()}</div><div className="stat-label">Volume total/ano</div></div>
+        <div className="stat-card orange"><div className="stat-icon-wrap orange"><Wallet size={20} className="stat-icon"/></div><div className="stat-value">R${mine.reduce((a, s) => a + Number(s.value || 0), 0).toLocaleString()}</div><div className="stat-label">Volume total/ano</div></div>
       </div>
 
       <div className="card">
@@ -1040,7 +1040,7 @@ function SponsorshipsPage({ sponsorships, userId, onShowModal, onOpenChat }) {
                     <td><div style={{ fontWeight: 600, fontSize: 13 }}>{s.title}</div></td>
                     <td><span style={{ fontSize: 13 }}>{s.athlete}</span></td>
                     <td><span style={{ fontSize: 13, color: 'var(--mu2)' }}>{s.sponsor}</span></td>
-                    <td><span className="text-mono text-green" style={{ fontSize: 13 }}>R${(s.value || 0).toLocaleString()}</span></td>
+                    <td><span className="text-mono text-green" style={{ fontSize: 13 }}>R${Number(s.value || 0).toLocaleString()}</span></td>
                     <td><span style={{ fontSize: 12, color: 'var(--mu2)' }}>{s.contrapartidas}</span></td>
                     <td><span className={`badge ${statusColor[s.status] || 'badge-muted'}`}>{statusLabel[s.status] || s.status}</span></td>
                     <td>{contactId && <button className="btn btn-ghost btn-sm" style={{ color: 'var(--g)', borderColor: 'var(--g)' }} onClick={() => onOpenChat?.(contactId)}>💬 Contatar</button>}</td>
@@ -1189,7 +1189,7 @@ function MarketplacePage({ services, onShowModal, userRole, serviceRequests, onO
 // ─── CROWDFUNDING PAGE ───────────────────────────────────────────────────────
 
 function CrowdfundingPage({ campaigns, onShowModal }) {
-  const totalRaised = campaigns.reduce((sum, c) => sum + (c.raised || 0), 0);
+  const totalRaised = campaigns.reduce((sum, c) => sum + Number(c.raised || 0), 0);
 
   return (
     <div>
@@ -1225,8 +1225,8 @@ function CrowdfundingPage({ campaigns, onShowModal }) {
                 </div>
                 <div className="progress-wrap mb-8"><div className="progress-bar" style={{ width: `${pct}%` }} /></div>
                 <div className="row-between mb-16">
-                  <span style={{ fontSize: 12, fontWeight: 600 }}>R${(c.raised || 0).toLocaleString()}</span>
-                  <span style={{ fontSize: 11, color: 'var(--mu2)' }}>meta: R${(c.goal || 0).toLocaleString()}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600 }}>R${Number(c.raised || 0).toLocaleString()}</span>
+                  <span style={{ fontSize: 11, color: 'var(--mu2)' }}>meta: R${Number(c.goal || 0).toLocaleString()}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                   <span style={{ fontSize: 11, color: 'var(--mu)' }}>⏰ até {c.deadline}</span>
@@ -2598,7 +2598,19 @@ export default function App() {
 
   const handleUpdateProfile = async (updates) => {
     if (!user) return;
-    const { data } = await api.updateProfile(user.id, updates);
+    // Only send fields that already exist as columns on the loaded profile —
+    // sending a field the DB doesn't have (e.g. after a migration hasn't run
+    // yet) makes the whole update fail silently.
+    const safeUpdates = { ...updates };
+    Object.keys(safeUpdates).forEach(key => {
+      if (!(key in profile)) delete safeUpdates[key];
+    });
+    const { data, error } = await api.updateProfile(user.id, safeUpdates);
+    if (error) {
+      console.error('updateProfile failed:', error);
+      showToast(`❌ Não foi possível salvar: ${error.message || 'erro desconhecido'}`);
+      return;
+    }
     if (data) {
       setProfile(data);
       // Refresh athlete list if user is an athlete
